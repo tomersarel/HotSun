@@ -15,7 +15,7 @@ class DemandHourly(ABC):
         :param date: the requested time
         :return: arr of the power consumption at that day by hour
         """
-        return self.get_demand_hourly_by_range_of_date(date, date + datetime.timedelta(days=1))
+        return self.get_demand_hourly_by_range_of_date(date, date + datetime.timedelta(days=1))[0]
 
     @abstractmethod
     def get_demand_hourly_by_range_of_date(self, start_date: datetime.datetime, end_date: datetime.datetime):
@@ -32,9 +32,9 @@ class DemandHourlyStateData(DemandHourly):
     """
     This class implements DemandHourly (kWh) for state data
     """
+
     def __init__(self):
-        titles = ["Date", "PartOfTheDay", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-        self.df = pd.read_csv("data/hourlyConsumptionPrediction.csv", names=titles)
+        self.df = pd.read_csv("data/hourlyConsumptionPrediction.csv", header=[0])
         self.df['Date'] = pd.to_datetime(self.df['Date'], dayfirst=True)
 
     def get_demand_hourly_by_range_of_date(self, start_date: datetime.datetime, end_date: datetime.datetime):
@@ -52,8 +52,8 @@ class DemandHourlyStateData(DemandHourly):
         end_date = end_date.replace(hour=0)
 
         period = self.df[(self.df['Date'] >= start_date) & (self.df['Date'] < end_date)].to_numpy()
-        hourly_consumption_arr = np.concatenate([day[2:] for day in period])
-        return hourly_consumption_arr
+
+        return [day[1:] for day in period]  # remove Date col
 
 
 class SolarRadiationHourly(ABC):
@@ -76,6 +76,7 @@ class SolarRadiationHourlyMonthData(SolarRadiationHourly):
     """
     This class implements SolarRadiationHourly for month radiation data
     """
+
     def __init__(self):
         titles = ["Month"]
         titles += [i for i in range(0, 24)]
@@ -96,21 +97,11 @@ class SolarRadiationHourlyMonthData(SolarRadiationHourly):
         period = self.df[(self.df['Month'] >= start_date.month) & (self.df['Month'] <= end_date.month)].to_dict()
 
         curr_date = start_date
-        hourly_solar_rad_arr = []
+        hourly_solar_rad_daily_arr = []
         while curr_date < end_date:
             # TODO: random the solar radiation in every day
             daily_solar_rad = self.df[self.df['Month'] == curr_date.month].to_numpy()[0]
-            hourly_solar_rad_arr.append(daily_solar_rad[1:])  # remove the month index
+            hourly_solar_rad_daily_arr.append(daily_solar_rad[1:])  # remove the month index
             curr_date += datetime.timedelta(days=1)
 
-        return np.concatenate(hourly_solar_rad_arr)
-
-
-class PVProduction:
-    def __init__(self):
-        pass
-
-    def get_production_by_date(self, date: datetime.datetime):
-        pass
-
-
+        return hourly_solar_rad_daily_arr

@@ -1,8 +1,20 @@
 from df_objects import *
+from imports import *
 
-"""d = DemandHourlyStateData()
-print(d.get_demand_hourly_by_range_of_date(datetime.datetime(2017, 1, 1, 13), datetime.datetime(2017, 1, 3, 13)))
-print(d.get_demand_daily_by_date(datetime.datetime(2049, 1, 1, 13)))"""
+logging.info("Start application")
 
-d = SolarRadiationHourlyMonthData()
-print(d.get_solar_rad_daily_by_range_of_date(datetime.datetime(2017, 12, 30, 13), datetime.datetime(2018, 1, 3, 13)))
+logging.info("Preprocess - Uploading files")
+demand_hourly = DemandHourlyStateData()
+solar_rad_hourly = SolarRadiationHourlyMonthData()
+logging.info("Preprocess - Files uploaded successfully")
+
+logging.info("Process - Start simulation")
+# simulation
+logging.info("Process - End simulation")
+
+logging.info("Postprocess - Start computing results")
+# post process
+logging.info("Postprocess - Start computing results")
+
+logging.info("GUI - Show results")
+# GUI
