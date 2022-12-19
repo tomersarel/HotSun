@@ -3,6 +3,7 @@ import unittest
 import json
 import logging
 import math
+import typing
 
 
 class Battery:
@@ -32,11 +33,21 @@ class Battery:
             # TODO: Use default arguments
             raise e
 
+    def __check_if_alive(func: typing.Callable):
+        def inner(self, *args, **kwargs):
+            if self.lifetime <= 0:
+                return 0
+            return func(self, *args, **kwargs)
+
+        return inner
+
     def update_efficiency(self, current_date: datetime.datetime):
         # TODO: Change to generic period
         self.efficiency -= (current_date - self.date) / datetime.timedelta(days=365) * self.decay_rate
+        self.lifetime -= (current_date - self.date) / datetime.timedelta(days=365)
         self.date = current_date
 
+    @__check_if_alive
     def get_max_charge(self):
         """
         Max possible charge to be charged at e given state
@@ -46,6 +57,7 @@ class Battery:
         # The theoretical upper bound is the total capacity multiplied by charge rate
         return min(max_charge, self.charge_rate) / self.efficiency
 
+    @__check_if_alive
     def try_charge(self, energy_kwh):
         """
         Tries to load the battery with the given energy
@@ -60,9 +72,11 @@ class Battery:
         logging.info(f" Charged {allowed_charge} to battery {self}")
         return allowed_charge
 
+    @__check_if_alive
     def get_max_discharge(self):
         return min([self.current_energy, self.charge_rate]) * self.efficiency
 
+    @__check_if_alive
     def try_discharge(self, energy_kwh):
         if self.current_energy == 0:
             return 0
@@ -76,9 +90,11 @@ class Battery:
 
         return allowed_discharge
 
+    @__check_if_alive
     def get_energy_kwh(self):
         return self.current_energy
 
+    @__check_if_alive
     def get_capacity_kwh(self):
         return self.capacity
 
@@ -161,6 +177,23 @@ class BatteryTest(unittest.TestCase):
         self.assertEqual(battery.get_max_discharge(), 0)
 
         self.assertEqual(battery.get_capacity_kwh(), 200)
+
+    def test_live_destroy(self):
+        efficiency = 0.9
+        battery = Battery(1, datetime.datetime(year=1, day=1, month=1), config_name='config_sim.json')
+        self.assertEqual(battery.get_capacity_kwh(), 200)
+        self.assertEqual(battery.get_energy_kwh(), 0)
+        self.assertEqual(battery.get_max_charge(), 70 / efficiency)
+        self.assertEqual(battery.get_max_discharge(), 0)
+
+        self.assertEqual(battery.try_charge(100), 70 / efficiency)
+        self.assertEqual(battery.get_energy_kwh(), 70)
+        self.assertEqual(battery.get_max_discharge(), 70 * efficiency)
+
+        battery.update_efficiency(datetime.datetime(year=30, day=1, month=1))
+        self.assertEqual(battery.try_discharge(40), 0)
+        self.assertEqual(battery.get_energy_kwh(), 0)
+        self.assertEqual(battery.get_max_discharge(), 0)
 
 
 if __name__ == '__main__':

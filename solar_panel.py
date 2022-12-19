@@ -7,5 +7,5 @@ class SolarPanel:
 
     def calc_energy_gen_hourly(self, date):
         # TODO: Calc pv production
-        return 2
+        return 5000
 
