@@ -14,7 +14,7 @@ solar_rad_hourly = SolarRadiationHourlyMonthData()
 logging.info("Preprocess - Files uploaded successfully")
 
 logging.info("Process - Start simulation")
-manager = manager.Manager(demand_hourly, [period_strategy.PeriodStrategy(10, 10), period_strategy.PeriodStrategy(20, 10)], [], solar_rad_hourly, hourly_strategy.generic_hourly_strategy)
+manager = manager.Manager(demand_hourly, [period_strategy.PeriodStrategy(10, 10)] * 27, [], solar_rad_hourly, hourly_strategy.generic_hourly_strategy)
 manager.run_simulator()
 logging.info("Process - End simulation")
 

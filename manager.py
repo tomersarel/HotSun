@@ -6,6 +6,7 @@ from period_strategy import PeriodStrategy
 from periodic_simulation import PeriodicSimulation
 from typing import Callable, List
 from imports import *
+from tqdm import tqdm
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'config.json')
 
@@ -58,7 +59,7 @@ class Manager:
         :return: None
         """
         logging.info(f"Manager: starts simulation")
-        for period_i in range(self.periods_amount):
+        for period_i in tqdm(range(self.periods_amount), desc="Loading...", ):
             logging.info(f"Manager: enters {period_i} period of the simulation.")
             # create the period simulation object
             demand, solar_rad = self.slice_data_for_period(period_i)

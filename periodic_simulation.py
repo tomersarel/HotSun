@@ -23,9 +23,7 @@ class PeriodicSimulation:
 
         for daily_demand, daily_solar_rad in zip(self.demand, self.solar_rad):
             day_result, self.state = self.daily_simulator(self.state, daily_demand, daily_solar_rad)
-            self.result = self.result.append(day_result, ignore_index=True)
-
-            # TODO: kill batteries and solar panels
+            self.result = pd.concat([self.result, day_result], ignore_index=True)
 
     def get_result(self):
         return self.result, self.state
