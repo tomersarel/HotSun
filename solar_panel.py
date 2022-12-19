@@ -6,5 +6,6 @@ class SolarPanel:
         self.amount = amount
 
     def calc_energy_gen_hourly(self, date):
-        pass
+        # TODO: Calc pv production
+        return 2
 

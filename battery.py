@@ -2,6 +2,7 @@ import datetime
 import unittest
 import json
 import logging
+import math
 
 
 class Battery:
@@ -57,7 +58,7 @@ class Battery:
         allowed_charge = min(self.get_max_charge(), energy_kwh)
         self.current_energy += self.efficiency * allowed_charge
         logging.info(f" Charged {allowed_charge} to battery {self}")
-        return allowed_charge * self.efficiency
+        return allowed_charge
 
     def get_max_discharge(self):
         return min([self.current_energy, self.charge_rate]) * self.efficiency
@@ -70,7 +71,7 @@ class Battery:
         self.current_energy -= allowed_discharge / self.efficiency
         logging.info(f" Discharged {allowed_discharge} from battery {self}")
 
-        if self.current_energy < self.THRESHOLD:
+        if math.isclose(self.current_energy, 0, abs_tol=self.THRESHOLD):
             self.current_energy = 0
 
         return allowed_discharge
@@ -121,7 +122,7 @@ class BatteryTest(unittest.TestCase):
         self.assertEqual(battery.get_max_charge(), 70 / efficiency)
         self.assertEqual(battery.get_max_discharge(), 0)
 
-        self.assertEqual(battery.try_charge(100), 70)
+        self.assertEqual(battery.try_charge(100), 70/efficiency)
         self.assertEqual(battery.get_energy_kwh(), 70)
         self.assertEqual(battery.get_max_discharge(), 70 * efficiency)
 
@@ -146,7 +147,7 @@ class BatteryTest(unittest.TestCase):
         self.assertEqual(battery.get_max_charge(), 70 / efficiency1)
         self.assertEqual(battery.get_max_discharge(), 0)
 
-        self.assertEqual(battery.try_charge(100), 70)
+        self.assertEqual(battery.try_charge(100), 70 / efficiency1)
         self.assertEqual(battery.get_energy_kwh(), 70)
         self.assertEqual(battery.get_max_discharge(), 70 * efficiency1)
         battery.update_efficiency(datetime.datetime(year=2, day=1, month=1))
