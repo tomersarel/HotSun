@@ -4,23 +4,16 @@ import json
 import logging
 import math
 import typing
-
+from config_manager import ConfigGetter
 
 class Battery:
     THRESHOLD = 10 ** -10
-    CONFIG_SIM = "config_sim.json"
 
-    def __init__(self, amount: int, date: datetime.datetime, config_name=CONFIG_SIM):
+    def __init__(self, amount: int, date: datetime.datetime):
         logging.basicConfig(filename="battery_logger.log", level=logging.DEBUG)
-        try:
-            with open(config_name) as config_file:
-                config = config_file.read()
-        except IOError as e:
-            logging.critical(f" Couldn't open config file {config_name}")
-            raise e
 
         try:
-            config_battery = json.loads(config)['battery']
+            config_battery = ConfigGetter['battery']
             self.capacity = config_battery['capacity'] * amount
             self.lifetime = config_battery['lifetime']
             self.current_energy = 0
@@ -109,30 +102,11 @@ class Battery:
 
 
 class BatteryTest(unittest.TestCase):
-    def test_basic_full_efficiency(self):
-        battery = Battery(1, datetime.datetime(year=1, day=1, month=1), config_name='test_full_efficiency.json')
-        self.assertEqual(battery.get_capacity_kwh(), 200)
-        self.assertEqual(battery.get_energy_kwh(), 0)
-        self.assertEqual(battery.get_max_charge(), 70)
-        self.assertEqual(battery.get_max_discharge(), 0)
-
-        self.assertEqual(battery.try_charge(100), 70)
-        self.assertEqual(battery.get_energy_kwh(), 70)
-        self.assertEqual(battery.get_max_discharge(), 70)
-
-        self.assertEqual(battery.try_discharge(40), 40)
-        self.assertEqual(battery.get_energy_kwh(), 30)
-        self.assertEqual(battery.get_max_discharge(), 30)
-
-        self.assertEqual(battery.try_discharge(50), 30)
-        self.assertEqual(battery.get_energy_kwh(), 0)
-        self.assertEqual(battery.get_max_discharge(), 0)
-
-        self.assertEqual(battery.get_capacity_kwh(), 200)
+    ConfigGetter.load_data()
 
     def test_efficiency(self):
         efficiency = 0.9
-        battery = Battery(1, datetime.datetime(year=1, day=1, month=1), config_name='config_sim.json')
+        battery = Battery(1, datetime.datetime(year=1, day=1, month=1))
         self.assertEqual(battery.get_capacity_kwh(), 200)
         self.assertEqual(battery.get_energy_kwh(), 0)
         self.assertEqual(battery.get_max_charge(), 70 / efficiency)
@@ -157,7 +131,7 @@ class BatteryTest(unittest.TestCase):
         decay_rate = 0.2
         efficiency2 = efficiency1 - decay_rate
 
-        battery = Battery(1, datetime.datetime(year=1, day=1, month=1), config_name='config_sim.json')
+        battery = Battery(1, datetime.datetime(year=1, day=1, month=1))
         self.assertEqual(battery.get_capacity_kwh(), 200)
         self.assertEqual(battery.get_energy_kwh(), 0)
         self.assertEqual(battery.get_max_charge(), 70 / efficiency1)
@@ -180,7 +154,7 @@ class BatteryTest(unittest.TestCase):
 
     def test_live_destroy(self):
         efficiency = 0.9
-        battery = Battery(1, datetime.datetime(year=1, day=1, month=1), config_name='config_sim.json')
+        battery = Battery(1, datetime.datetime(year=1, day=1, month=1))
         self.assertEqual(battery.get_capacity_kwh(), 200)
         self.assertEqual(battery.get_energy_kwh(), 0)
         self.assertEqual(battery.get_max_charge(), 70 / efficiency)

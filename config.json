@@ -1,6 +1,21 @@
 {
   "PERIODS_DAYS_AMOUNT": 365,
   "TIME_FORMAT": "%d/%m/%Y %H",
-  "START_DATE": "16/01/2022 00",
-  "END_DATE": "01/01/2050 00"
+  "START_DATE": "01/01/2017 00",
+  "END_DATE": "01/01/2050 00",
+  "battery":
+  {
+    "capacity": 200,
+    "lifetime": 25,
+    "charge_rate": 20000,
+    "efficiency": 0.9,
+    "decay_rate": 0.2
+  },
+  "solar":
+  {
+    "lifetime": 25,
+    "efficiency": 0.2,
+    "decay_rate": 0.01,
+    "area": 1
+  }
 }
