@@ -3,6 +3,9 @@ from df_objects import *
 from imports import *
 import manager
 import hourly_strategy
+from matplotlib import pyplot as plt
+import plotly
+import dash
 
 logging.info("Start application")
 
@@ -24,3 +27,12 @@ logging.info("Postprocess - Start computing results")
 
 logging.info("GUI - Show results")
 # GUI
+
+pd.options.plotting.backend = "plotly"
+
+for i in range(33):
+    data = pd.read_csv(f"simulation output//period{i}.csv", parse_dates=['Date'], dayfirst=True, index_col=['Date'])
+    data_daily = data.resample('D').sum()
+    fig = data_daily.plot.bar(title=f"{2017 + i}")
+    fig.show()
+    input()
