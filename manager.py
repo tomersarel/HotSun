@@ -53,13 +53,13 @@ class Manager:
         end_date = datetime.datetime.strptime(ConfigGetter["END_DATE"], time_string_format)
         self.periods_amount = (end_date - self.start_date).days // self.periods_length_in_days
 
-    def run_simulator(self, set_progress) -> None:
+    def run_simulator(self) -> None:
         """
         activates the simulator for all the time-periods: prepare the data, call the simulator and saves the output
         :return: None
         """
         logging.info(f"Manager: starts simulation")
-        for period_i in tqdm(range(self.periods_amount), desc="Loading...", ):
+        for period_i in tqdm(range(self.periods_amount)):
             logging.info(f"Manager: enters {period_i} period of the simulation.")
             # create the period simulation object
             demand, solar_rad = self.slice_data_for_period(period_i)
