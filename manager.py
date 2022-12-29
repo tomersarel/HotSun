@@ -53,7 +53,7 @@ class Manager:
         end_date = datetime.datetime.strptime(ConfigGetter["END_DATE"], time_string_format)
         self.periods_amount = (end_date - self.start_date).days // self.periods_length_in_days
 
-    def run_simulator(self) -> None:
+    def run_simulator(self, set_progress) -> None:
         """
         activates the simulator for all the time-periods: prepare the data, call the simulator and saves the output
         :return: None
@@ -68,7 +68,6 @@ class Manager:
             # activate the simulation for this period
             periodic_simulation.start()
             simulation_output_data, self.current_state = periodic_simulation.get_result()
-
             # save the simulation output
             self.save_output(period_i, simulation_output_data)
 
