@@ -54,6 +54,7 @@ def process(id):
 
 @callback(
     Output('progress_bar', 'value'),
+Output('progress_bar', 'label'),
     Input('timer_progress', 'n_intervals'),
     prevent_initial_call=True)
 def callback_progress(n_intervals: int) -> (float, str):
@@ -67,4 +68,4 @@ def callback_progress(n_intervals: int) -> (float, str):
         percent = 0
     finally:
         text = f'{percent:.0f}%'
-        return percent
+        return percent, text

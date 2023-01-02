@@ -14,12 +14,12 @@ navbar = dbc.NavbarSimple(
     brand_href="/home",
     color="primary",
     dark=True,
-
+    style={"height": "8vh"}
 )
 
 app.layout = html.Div([navbar,
                        dash.page_container
-                       ])
+                       ], style={"overflow": "hidden"})
 ConfigGetter.load_data()
 
 if __name__ == '__main__':
