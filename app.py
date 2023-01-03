@@ -1,8 +1,8 @@
 from imports import *
-import hourly_strategy
 
 logging.info("Start application")
-app = Dash("Hot Sun", use_pages=True, external_stylesheets=[dbc.themes.BOOTSTRAP])
+
+application = Dash("Hot Sun", use_pages=True, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 navbar = dbc.NavbarSimple(
     children=[
@@ -17,10 +17,10 @@ navbar = dbc.NavbarSimple(
     style={"height": "8vh"}
 )
 
-app.layout = html.Div([navbar,
+application.layout = html.Div([navbar,
                        dash.page_container
                        ], style={"overflow": "hidden"})
 ConfigGetter.load_data()
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    application.run_server(debug=True)
