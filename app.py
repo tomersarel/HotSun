@@ -1,12 +1,13 @@
+import df_objects
 from imports import *
 
 logging.info("Start application")
 
-application = Dash("Hot Sun", use_pages=True, external_stylesheets=[dbc.themes.BOOTSTRAP])
+application = Dash("Hot Sun", use_pages=True, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
 
 navbar = dbc.NavbarSimple(
     children=[
-        dbc.NavItem(dbc.NavLink("Start", href="/run-simulation")),
+        dbc.NavItem(dbc.NavLink("Start", href="/start")),
         dbc.NavItem(dbc.NavLink("Display Result", href="/show-energy-dist")),
         dbc.NavItem(dbc.NavLink("About Us", href="/show-energy-dist"))
     ],
