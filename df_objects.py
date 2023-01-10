@@ -2,6 +2,10 @@ import datetime
 import pandas as pd
 import numpy as np
 from abc import ABC, abstractmethod
+import requests
+import json
+import csv
+import os
 
 
 class DemandHourly(ABC):
@@ -105,3 +109,51 @@ class SolarRadiationHourlyMonthData(SolarRadiationHourly):
             curr_date += datetime.timedelta(days=1)
 
         return hourly_solar_rad_daily_arr
+
+
+class SolarProductionHourlyDataPVGIS(SolarRadiationHourly):
+    def __init__(self, longitude, latitude, peakpower, loss):
+        """
+        :param longitude:
+        :param latitude:
+        :param peakpower:
+        :param loss: percents
+        """
+        self.longitude = longitude
+        self.latitude = latitude
+        self.peakpower = peakpower
+        self.loss = loss
+        file_path = f'data/solar_radiation_hourly_long{self.longitude}_lat{self.latitude}_peak{self.peakpower}' \
+                    f'_loss{self.loss}.csv'
+        if not os.path.isfile(file_path):
+            api_url = f"https://re.jrc.ec.europa.eu/api/seriescalc?lat={self.latitude}&lon={longitude}&" \
+                      f"startyear={2016}&endyear={2016}&pvcalculation={1}&peakpower={self.peakpower}&" \
+                      f"loss={self.loss}&optimalinclination={1}&optimalangles={1}&outputformat=csv"
+            response = requests.get(api_url)
+
+            with open(file_path, 'w+', newline='') as file_data:
+                writer = csv.writer(file_data, delimiter=',')
+                for line in str(response.content).split(r"\r\n")[10:-10]:
+                    writer.writerow(line.split(','))
+
+        titles = ['time', 'P', 'G(i)', 'H_sun',	'T2m', 'WS10m', 'Int']
+
+        self.df = pd.read_csv(file_path, names=titles)
+
+    def get_solar_rad_daily_by_range_of_date(self, start_date: datetime.datetime, end_date: datetime.datetime):
+        """
+        return the predicted consumption in given range of date (including start_date excluding end_date)
+        :param end_date: the start date
+        :param start_date: the end date
+        :return: arr of the power consumption at that date range by hour
+        """
+        pass
+
+    def get_solar_production_hourly(self, date: datetime.datetime):
+        """
+
+        :param date:
+        :return:
+        """
+        return float(self.df["P"][self.df["time"] == date.strftime("2016%m%d:%H09")].to_numpy()[0])
+
