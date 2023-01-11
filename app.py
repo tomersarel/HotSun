@@ -1,3 +1,5 @@
+import json
+
 import df_objects
 from imports import *
 
@@ -19,7 +21,8 @@ navbar = dbc.NavbarSimple(
 )
 
 application.layout = html.Div([navbar,
-                       dash.page_container
+                       dash.page_container,
+                               dcc.Store(id="config", storage_type="memory", data=json.load(open("config.json")))
                        ], style={"overflow": "hidden"})
 ConfigGetter.load_data()
 

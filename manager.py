@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import pandas as pd
 
 from df_objects import DemandHourlyStateData, SolarRadiationHourly
 from period_strategy import PeriodStrategy
@@ -7,6 +8,7 @@ from periodic_simulation import PeriodicSimulation
 from typing import Callable, List
 from imports import *
 from tqdm import tqdm
+from state import State
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'config.json')
 
@@ -42,7 +44,7 @@ class Manager:
         self.periods_amount = 0
         self.read_json_data()
         # prepare data for the simulation
-        self.current_state = State(self.start_date)
+        self.current_state = State(self.start_date, )
         logging.info(f"Manager was built successfully.")
 
     def read_json_data(self):
@@ -53,12 +55,13 @@ class Manager:
         end_date = datetime.datetime.strptime(ConfigGetter["END_DATE"], time_string_format)
         self.periods_amount = (end_date - self.start_date).days // self.periods_length_in_days
 
-    def run_simulator(self) -> None:
+    def run_simulator(self) -> pd.DataFrame:
         """
         activates the simulator for all the time-periods: prepare the data, call the simulator and saves the output
         :return: None
         """
         logging.info(f"Manager: starts simulation")
+        output = []
         for period_i in tqdm(range(self.periods_amount)):
             logging.info(f"Manager: enters {period_i} period of the simulation.")
             # create the period simulation object
@@ -70,6 +73,11 @@ class Manager:
             simulation_output_data, self.current_state = periodic_simulation.get_result()
             # save the simulation output
             self.save_output(period_i, simulation_output_data)
+            output.append(simulation_output_data)
+
+        output = pd.concat(output)
+        output.reset_index(inplace=True, drop=True)
+        return output
 
     def slice_data_for_period(self, period_i: int) -> (np.array, np.array):
         """
