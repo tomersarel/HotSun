@@ -105,7 +105,7 @@ bottom = {"position": "absolute", "top": "95%", "-ms-transform": "translateY(-50
 
 layout = html.Div([dbc.Card(
     [dbc.CardBody([html.Div([dbc.Row([dbc.Col(dbc.Button("Previous", id="prev", n_clicks=0, style=center), width=2),
-                                      dbc.Col(id="content", width=8),
+                                      dbc.Col(dbc.Form(id="content"), width=8),
                                       dbc.Col(dbc.Button("Next", id="next", n_clicks=0, style=center), width=2)]),
                              dbc.Row(dbc.Col(html.Small("1/5", style=bottom, id="step_num"), width=2),
                                      justify="center")])])]
@@ -218,10 +218,10 @@ def update_output(n, length, start, end):
     State('upload-data', 'filename'),
     State('purchase-strategy', 'data'),
     State("date-start", "data"), State("date-end", "data"),
-    State('period-length', 'data'),
-    prevent_initial_call=True
+    State('period-length', 'data')
 )
 def update_output(content, file_name, current, start, end, length):
+    result = [None, None, None]
     if content is not None:
         try:
             if file_name.split('.')[1] != 'csv':
@@ -235,7 +235,16 @@ def update_output(content, file_name, current, start, end, length):
                     or not all(str(x).isnumeric() and float(x).is_integer() for x in df['solar_panel_purchased'])\
                     or not all(str(x).isnumeric() and float(x).is_integer() for x in df['batteries_purchased']):
                 raise Exception("Bad file format")
-            return df[['solar_panel_purchased', 'batteries_purchased']].to_json(), "Success!", "success"
+            result[1], result[2] = "Success!", "success"
+            result[0] = df
         except Exception as e:
-            return current, str(e) + ". Try again!", "danger"
-    return current, html.Div(['Drag and Drop or ', html.B('Select Files')]), "light"
+            result[1], result[2] = str(e) + ". Try again!", "danger"
+            result[0] = None
+    else:
+        result[1], result[2] = html.Div(['Drag and Drop or ', html.B('Select Files')]), "light"
+
+    if result[0] is None:
+        period_amount = calculate_periods_amount(start, end, length)
+        result[0] = pandas.DataFrame(data={'period': [i + 1 for i in range(period_amount)], 'solar_panel_purchased': [0] * period_amount,
+                  'batteries_purchased': [0] * period_amount})
+    return result[0][['solar_panel_purchased', 'batteries_purchased']].to_json(), result[1], result[2]

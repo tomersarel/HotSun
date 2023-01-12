@@ -15,15 +15,26 @@ cache = diskcache.Cache("./cache")
 background_callback_manager = DiskcacheLongCallbackManager(cache)
 dash.register_page(__name__, background_callback_manager=background_callback_manager)
 
+colors = {"Solar": "#ffe205", "Batteries": "gray", "Buying": "#ec4141", "Selling": "#5fbb4e", "Storaged": "#9edbf9",
+          "Lost": "gray"}
+
 sidebar = html.Div([html.H4("Control Panel"),
-                    dbc.Button("Run", id="run", color="primary", style={"width": "50%"}),
-                    html.Div(id="paramerts"),
+                    dbc.Button("Run", id="run", color="primary", style={"width": "50%"}, className="my-2 text-center"),
+                    html.Div(id="paramerts", className="my-2"),
                     dcc.Store(id="df")],
-                   style={"height": "92vh", "overflow": "auto"}, className="text-center")
+                   style={"display": "None"}, id="sidebar", className="mx-3 my-3")
+
+
+def generate_year_enr_graph(start_year, end_year, df, resample='D'):
+    data = df[(df['Date'] >= datetime.datetime(year=start_year, day=1, month=1)) & (
+                df['Date'] < datetime.datetime(year=end_year, day=1, month=1))]
+    data = data.resample(resample, on='Date', convention="start").sum()
+    return [go.Bar(x=data.index, y=data[col], name=col, marker={'color': colors[col], 'line.width': 0}) for col in
+            data.columns]
 
 
 def get_display(config, df):
-    display_summery = html.Div([
+    display_summery = html.Div([html.Div([
         dbc.Card([dbc.CardBody([
             html.H1(f"-", className="card-title", style={"text-align": "center", "font-size": 48}),
             html.H4(f"Parameter {i}", className="card-title", style={"text-align": "center"}),
@@ -31,7 +42,11 @@ def get_display(config, df):
                 "description of the paramter",
                 className="card-text",
             )])], style={"width": "18rem"}, className="mx-2 my-2") for i in range(8)
-    ], className="row")
+    ], className="row"),
+        dcc.Graph(figure=go.Figure(
+            data=generate_year_enr_graph(config['START_YEAR'], config['END_YEAR'], dict_to_dataframe(df), 'Y'),
+            layout=go.Layout(barmode='stack', title=f"yearly energy distribution")))
+    ])
     display_energy = html.Div([dcc.Slider(id="period_slider",
                                           min=config["START_YEAR"],
                                           max=config["END_YEAR"] - 1,
@@ -53,8 +68,8 @@ def get_display(config, df):
     return display
 
 
-layout = html.Div([html.Div(id="placeholder"), dbc.Row([dbc.Col(sidebar, width=2),
-                                                        dbc.Col(id="display", width=10)]),
+layout = html.Div([html.Div(id="placeholder"), dbc.Row([dbc.Col(sidebar, width=3),
+                                                        dbc.Col(id="display", width=9)]),
                    html.Div([html.Div([html.H3("Loading..."),
                                        dbc.Progress(id="progress_bar", style={'width': '300px', 'height': '20px'})],
                                       style={"position": "absolute", "left": "50%", "top": "50%", "margin-top": "-50px",
@@ -75,16 +90,10 @@ def dict_to_dataframe(df):
         return df
     df['Date'] = pd.to_datetime(df['Date'], dayfirst=True)
     df.set_index('Date')
+    for coloumn in df.columns:
+        if coloumn != "Date":
+            df[coloumn] = pd.to_numeric(df[coloumn])
     return df
-
-
-def generate_year_enr_graph(year, df):
-    """data = pd.read_csv(f"simulation output//period{year - ConfigGetter['START_YEAR']}.csv", parse_dates=['Date'],
-                       dayfirst=True,
-                       index_col=['Date'])"""
-    data = df[(df['Date'] >= datetime.datetime(year=year, day=1, month=1)) & (df['Date'] < datetime.datetime(year=year+1, day=1, month=1))]
-    data = data.resample('D', on='Date').sum()
-    return [go.Bar(x=data.index, y=data[col], name=col) for col in data.columns]
 
 
 @callback(
@@ -93,16 +102,16 @@ def generate_year_enr_graph(year, df):
     State("df", "data")
 )
 def update_yearly_graph(value, df):
-    return go.Figure(data=generate_year_enr_graph(value, dict_to_dataframe(df)),
-                     layout=go.Layout(barmode='stack', title=f"{value} energy distribution"))
+    fig = go.Figure(data=generate_year_enr_graph(value, value + 1, dict_to_dataframe(df)),
+                    layout=go.Layout(barmode='stack', title=f"{value} energy distribution"))
+    fig.update_layout(bargap=0)
+    return fig
 
 
 def generate_day_enr_graph(date, df):
-    """df = pd.read_csv(f"simulation output//period{date.year - 2017}.csv", parse_dates=['Date'], dayfirst=True,
-                     index_col=['Date'])"""
     df = df[(df['Date'] >= date) & (df['Date'] < date + datetime.timedelta(days=1))]
     df = df.set_index('Date')
-    return [go.Bar(x=df.index.hour, y=df[col], name=col) for col in df.columns]
+    return [go.Bar(x=df.index.hour, y=df[col], name=col, marker={'color': colors[col], 'line.width': 0}) for col in df.columns]
 
 
 @callback(
@@ -119,18 +128,30 @@ def update_daily_graph(clickData, df):
                "display": "block"}
 
 
+def get_parameters(config):
+    result = []
+    for parameter, value in config.items():
+        if parameter not in ["START_YEAR", "END_YEAR", "PERIODS_DAYS_AMOUNT"]:
+            parameter = parameter.replace("_", " ").lower().capitalize()
+            if type(value) == int:
+                result.append(dbc.Row([dbc.Col(f"{parameter}:", width="auto"), dbc.Col(dbc.Input(placeholder=f"{value}", type="number"))], className="my-2"))
+            elif type(value) == dict:
+                result.append(dbc.Row(dbc.Accordion(dbc.AccordionItem(get_parameters(value), title=parameter), start_collapsed=True)))
+    return result
+
+
 @callback(
     Output("paramerts", "children"),
     Output("df", "data"),
     Output("display", "children"),
+Output("sidebar", "style"),
     Input("run", "n_clicks"),
     State("config", "data"),
     manager=background_callback_manager,
     running=[
         (Output("run", "children"), True, False),
         (Output("cancel", "disabled"), False, True)],
-    cancel=[Input("cancel_button_id", "n_clicks")],
-    prevent_initial_callback=True
+    cancel=[Input("cancel_button_id", "n_clicks")]
 )
 def process(n_clicks, config):
     std_err_backup = sys.stderr
@@ -155,7 +176,8 @@ def process(n_clicks, config):
     file_prog.truncate()
     file_prog.close()
     sys.stderr = std_err_backup
-    return str(config), output.to_dict('records'), get_display(config, output)
+    return get_parameters(config), output.to_dict('records'), get_display(config, output), \
+           {"height": "92vh", "width": "100%", "overflow-y": "auto", "overflow-x": "hidden"}
 
 
 @callback(
