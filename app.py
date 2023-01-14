@@ -3,6 +3,7 @@ from df_objects import *
 from imports import *
 import manager
 import hourly_strategy
+from post_processor import PostProcessor
 from matplotlib import pyplot as plt
 import plotly
 import dash
@@ -12,6 +13,7 @@ logging.info("Start application")
 ConfigGetter.load_data()
 
 logging.info("Preprocess - Uploading files")
+# todo: move the loading of the post processor data to here
 demand_hourly = DemandHourlyStateData()
 solar_rad_hourly = SolarRadiationHourlyMonthData()
 logging.info("Preprocess - Files uploaded successfully")
@@ -23,7 +25,9 @@ logging.info("Process - End simulation")
 
 logging.info("Postprocess - Start computing results")
 # post process
-logging.info("Postprocess - Start computing results")
+post_processor = PostProcessor()
+total_income = post_processor.run_post_processor()
+print(total_income)
 
 logging.info("GUI - Show results")
 # GUI

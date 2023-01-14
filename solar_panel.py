@@ -2,13 +2,14 @@ from config_manager import ConfigGetter
 
 
 class SolarPanel:
-    def __init__(self, amount: int, efficiency: float, lifetime: int, decay_rate: float):
+    def __init__(self, amount: int, efficiency: float, lifetime: int, decay_rate: float, max_power: float):
         solar_config = ConfigGetter['solar']
         self.efficiency = solar_config['efficiency']
         self.lifetime = solar_config['lifetime']
         self.decay_rate = solar_config['decay_rate']
         self.area = solar_config['area']
         self.amount = amount
+        self.max_power = max_power
 
     def calc_energy_gen_hourly(self, radiation):
         # TODO: Calc pv production

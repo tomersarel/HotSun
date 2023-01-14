@@ -48,9 +48,26 @@ class GreedyDailyStrategy(DailyStrategy):
                     battery_index += 1
                     buying[hour] = to_supply
             state.current_date += datetime.timedelta(hours=1)
+        new_batteries_energy = 0
+        for battery in state.new_batteries:
+            new_batteries_energy += battery.capacity
+        new_panels_power = 0
+        for panel in state.new_panels:
+            new_panels_power += panel.max_power
         result = pd.DataFrame({'Date': [state.current_date + datetime.timedelta(hours=i) for i in range(24)],
-                               'Batteries': batteries, 'Solar': solar, 'Buying': buying, 'Selling': selling,
-                               'Lost': [0] * 24, 'Storaged': storaged})
+                              'Batteries': batteries, 'Solar': solar, 'Buying': buying, 'Selling': selling,
+                              'Lost': [0] * 24, 'Storaged': storaged,
+                              "NewBatteries": [new_batteries_energy] * 24,
+                              "AllBatteries": [len(state.batteries)] * 24,
+                              "NewSolarPanels": [new_panels_power] * 24,
+                              "AllSolarPanels": [len(state.solar_panels)] * 24})
+        # result = pd.DataFrame({'Date': [state.current_date + datetime.timedelta(hours=i) for i in range(24)],
+        #                        'Batteries': 1, 'Solar': 1, 'Buying': 1, 'Selling': 1,
+        #                        'Lost': [0] * 24, 'Storaged': 1,
+        #                        "NewBatteries": [1] * 24,
+        #                        "AllBatteries": [i + 1 for i in range(24)],
+        #                        "NewSolarPanels": [1] * 24,
+        #                        "AllSolarPanels": [i + 1 for i in range(24)]})
 
         return result, state
 
@@ -67,7 +84,7 @@ class GreedyTest(unittest.TestCase):
         cur_state.batteries = [Battery(1, datetime.datetime(year=1, month=1, day=1)),
                                Battery(1, datetime.datetime(year=1, month=1, day=1))]
         cur_state.batteries[0].update_efficiency(datetime.datetime(year=2, month=1, day=1))
-        cur_state.solar_panels = [SolarPanel(1, 1, 1, 1), SolarPanel(1, 1, 1, 1)]
+        cur_state.solar_panels = [SolarPanel(1, 1, 1, 1, 1), SolarPanel(1, 1, 1, 1, 1)]
 
 
 from df_objects import *
