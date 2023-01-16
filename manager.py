@@ -1,7 +1,9 @@
 import os
 import numpy as np
+from config_manager import ConfigGetter
+from df_objects import DemandHourlyStateData, SolarRadiationHourly, SolarRadiationHourlyMonthData, \
+    SolarProductionHourlyDataPVGIS
 import pandas as pd
-
 import period_strategy
 from df_objects import DemandHourlyStateData, SolarRadiationHourly
 from process_manager import ProcessManager

@@ -5,6 +5,10 @@ import pandas as pd
 import numpy as np
 from config_manager import ConfigGetter
 from abc import ABC, abstractmethod
+import requests
+import json
+import csv
+import os
 
 import config_manager
 
@@ -61,6 +65,38 @@ class DemandHourlyStateData(DemandHourly):
         return [day[1:] for day in period]  # remove Date col
 
 
+class DemandHourlyCityData(DemandHourly):
+    """
+    This class implements DemandHourly (kWh) for state data
+    """
+
+    def __init__(self, city):
+        self.df = pd.read_csv("data/hourlyConsumptionPrediction.csv", header=[0])
+        self.df['Date'] = pd.to_datetime(self.df['Date'], dayfirst=True)
+        city_df = pd.read_csv("data/cities_usage_ratio.csv", names=['Name', 'TotalConsumptionPerResident',
+                                                                    'TotalGovernmentConsumptionJurisdiction',
+                                                                    'Population', 'TotalEnergy'])
+        self.city = city
+        self.city_usage = float(city_df["TotalEnergy"][city_df['Name'] == self.city].to_numpy()[0])
+        self.city_ratio = self.city_usage / 76111512  # TotalUsage 2021
+
+    def get_demand_hourly_by_range_of_date(self, start_date: datetime.datetime, end_date: datetime.datetime):
+        """
+        return the predicted consumption in given range of date (including start_date excluding end_date)
+        :param end_date: the start date
+        :param start_date: the end date
+        :return: arr of the power consumption at that date range by hour
+        """
+
+        # make sure the dates are at the beginning of the day
+        start_date = start_date.replace(hour=0)
+        end_date = end_date.replace(hour=0)
+
+        period = self.df[(self.df['Date'] >= start_date) & (self.df['Date'] < end_date)].to_numpy()
+
+        return [day[1:]*self.city_ratio for day in period]  # remove Date col
+
+
 class SolarRadiationHourly(ABC):
     """
     This class wraps the solar radiation db
@@ -110,6 +146,58 @@ class SolarRadiationHourlyMonthData(SolarRadiationHourly):
             curr_date += datetime.timedelta(days=1)
 
         return hourly_solar_rad_daily_arr
+
+
+class SolarProductionHourlyDataPVGIS(SolarRadiationHourly):
+    def __init__(self, longitude, latitude, peakpower, loss):
+        """
+        :param longitude:
+        :param latitude:
+        :param peakpower:
+        :param loss: percents
+        """
+        self.longitude = longitude
+        self.latitude = latitude
+        self.peakpower = peakpower
+        self.loss = loss
+        file_path = f'data/solar_radiation_hourly_long{self.longitude}_lat{self.latitude}_peak{self.peakpower}' \
+                    f'_loss{self.loss}.csv'
+        if not os.path.isfile(file_path):
+            api_url = f"https://re.jrc.ec.europa.eu/api/seriescalc?lat={self.latitude}&lon={longitude}&" \
+                      f"startyear={2016}&endyear={2016}&pvcalculation={1}&peakpower={self.peakpower}&" \
+                      f"loss={self.loss}&optimalinclination={1}&optimalangles={1}&outputformat=csv"
+            response = requests.get(api_url)
+
+            with open(file_path, 'w+', newline='') as file_data:
+                writer = csv.writer(file_data, delimiter=',')
+                for line in str(response.content).split(r"\r\n")[10:-10]:
+                    writer.writerow(line.split(','))
+
+        titles = ['time', 'P', 'G(i)', 'H_sun',	'T2m', 'WS10m', 'Int']
+
+        self.df = pd.read_csv(file_path, names=titles)
+
+    def get_solar_rad_daily_by_range_of_date(self, start_date: datetime.datetime, end_date: datetime.datetime):
+        """
+        return the predicted consumption in given range of date (including start_date excluding end_date)
+        :param end_date: the start date
+        :param start_date: the end date
+        :return: arr of the power consumption at that date range by hour
+        """
+        start_date = start_date.replace(hour=0)
+        end_date = end_date.replace(hour=0)
+
+        curr_date = start_date
+        production_daily_arr = []
+        while curr_date < end_date:
+            production_arr = []
+            for i in range(24):
+                production_arr.append(float(self.df["P"][self.df["time"] ==
+                                                        curr_date.strftime(f"2016%m%d:{i:02d}09")].to_numpy()[0]))
+            production_daily_arr.append(production_arr)  # remove the month index
+            curr_date += datetime.timedelta(days=1)
+
+        return production_daily_arr
 
 
 class Cost(ABC):
