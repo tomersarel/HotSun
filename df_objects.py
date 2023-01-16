@@ -105,3 +105,9 @@ class SolarRadiationHourlyMonthData(SolarRadiationHourly):
             curr_date += datetime.timedelta(days=1)
 
         return hourly_solar_rad_daily_arr
+
+
+def get_town_loc_by_name():
+    df = pd.read_csv("data/cities.csv", header=[0])
+    df['loc'] = list(zip(df['lat'], df['lng']))
+    return list(zip(df['city'], df['loc']))

@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 
@@ -10,6 +11,9 @@ class ConfigGetter:
     def load_data(cls):
         with open(cls.json_path) as json_file:
             cls.config_data_dict = json.load(json_file)
+
+        cls.config_data_dict["START_YEAR"] = datetime.datetime.strptime(ConfigGetter["START_DATE"], ConfigGetter["TIME_FORMAT"]).year
+        cls.config_data_dict["END_YEAR"] = datetime.datetime.strptime(ConfigGetter["END_DATE"], ConfigGetter["TIME_FORMAT"]).year
 
     @classmethod
     def __class_getitem__(cls, item):
