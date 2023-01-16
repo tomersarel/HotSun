@@ -170,7 +170,7 @@ def update_config(n, period, start, end, loc, strategy):
 )
 def select_unit(n1, n2, n3, length, prev):
     if length is None:
-        return 365, prev
+        return ConfigGetter["PERIODS_DAYS_AMOUNT"], prev
     DAYS = {"years": 365, "months": 30, "days": 1}
     ctx = dash.callback_context
     if not ctx.triggered:
@@ -190,7 +190,8 @@ def change_date(start, end):
 
 @callback(
     Output('city-lon-lat', 'data'),
-    Input('select', 'value')
+    Input('select', 'value'),
+    prevent_initial_call=True
 )
 def update_output(value):
     return float(value.split("/")[0]), float(value.split("/")[1])
@@ -245,6 +246,6 @@ def update_output(content, file_name, current, start, end, length):
 
     if result[0] is None:
         period_amount = calculate_periods_amount(start, end, length)
-        result[0] = pandas.DataFrame(data={'period': [i + 1 for i in range(period_amount)], 'solar_panel_purchased': [0] * period_amount,
-                  'batteries_purchased': [0] * period_amount})
+        result[0] = pandas.DataFrame(data={'period': [i + 1 for i in range(period_amount)], 'solar_panel_purchased': [5000] * period_amount,
+                  'batteries_purchased': [100] * period_amount})
     return result[0][['solar_panel_purchased', 'batteries_purchased']].to_json(), result[1], result[2]

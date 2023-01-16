@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 
+import period_strategy
 from df_objects import DemandHourlyStateData, SolarRadiationHourly
 from period_strategy import PeriodStrategy
 from periodic_simulation import PeriodicSimulation
@@ -21,10 +22,10 @@ class Manager:
 
     def __init__(self,
                  hourly_electricity_demand: DemandHourlyStateData,
-                 objects_period_strategy: List[PeriodStrategy],
+                 objects_period_strategy: list[period_strategy.PeriodStrategy],
                  periodic_available_area: np.array,
                  hourly_solar_radiation: SolarRadiationHourly,
-                 daily_strategy: Callable):
+                 daily_strategy: Callable, config: dict):
         """
         initializing the Manager object.
         :param hourly_electricity_demand: a hourly forecast for the electricity demand
@@ -33,8 +34,10 @@ class Manager:
         :param hourly_solar_radiation: used to calculate the production of the solar panels
         :param daily_strategy: a function which manages the energy for each year
         """
+        self.config = config
         self.hourly_electricity_demand = hourly_electricity_demand
-        self.objects_period_strategy = objects_period_strategy
+        strategy = pd.DataFrame.from_dict(config["STRATEGY"])
+        self.objects_period_strategy = [period_strategy.PeriodStrategy(row["solar_panel_purchased"], row["batteries_purchased"]) for index, row in strategy.iterrows()]
         self.periodic_available_area = periodic_available_area
         self.hourly_solar_radiation = hourly_solar_radiation
         self.daily_strategy = daily_strategy
@@ -48,11 +51,11 @@ class Manager:
         logging.info(f"Manager was built successfully.")
 
     def read_json_data(self):
-        time_string_format = ConfigGetter["TIME_FORMAT"]
-        self.periods_length_in_days = ConfigGetter["PERIODS_DAYS_AMOUNT"]
+        time_string_format = self.config["TIME_FORMAT"]
+        self.periods_length_in_days = self.config["PERIODS_DAYS_AMOUNT"]
         # reads the start & end date as a datetime object
-        self.start_date = datetime.datetime.strptime(ConfigGetter["START_DATE"], time_string_format)
-        end_date = datetime.datetime.strptime(ConfigGetter["END_DATE"], time_string_format)
+        self.start_date = datetime.datetime.strptime(self.config["START_DATE"], time_string_format)
+        end_date = datetime.datetime.strptime(self.config["END_DATE"], time_string_format)
         self.periods_amount = (end_date - self.start_date).days // self.periods_length_in_days
 
     def run_simulator(self) -> pd.DataFrame:
@@ -62,12 +65,13 @@ class Manager:
         """
         logging.info(f"Manager: starts simulation")
         output = []
-        for period_i in tqdm(range(self.periods_amount)):
+        bar = tqdm(range(self.periods_amount))
+        for period_i in bar:
             logging.info(f"Manager: enters {period_i} period of the simulation.")
             # create the period simulation object
             demand, solar_rad = self.slice_data_for_period(period_i)
             periodic_simulation = PeriodicSimulation(self.current_state, self.periods_length_in_days, demand, solar_rad,
-                                                     self.objects_period_strategy[period_i], self.daily_strategy)
+                                                     self.objects_period_strategy[period_i], self.daily_strategy, self.config)
             # activate the simulation for this period
             periodic_simulation.start()
             simulation_output_data, self.current_state = periodic_simulation.get_result()

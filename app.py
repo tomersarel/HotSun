@@ -1,11 +1,10 @@
 import json
-
-import df_objects
 from imports import *
 
 logging.info("Start application")
 
-application = Dash("Hot Sun", use_pages=True, external_stylesheets=[dbc.themes.BOOTSTRAP], suppress_callback_exceptions=True)
+application = Dash("Hot Sun", use_pages=True, external_stylesheets=[dbc.themes.BOOTSTRAP],
+                   suppress_callback_exceptions=True)
 
 navbar = dbc.NavbarSimple(
     children=[
@@ -21,10 +20,12 @@ navbar = dbc.NavbarSimple(
 )
 
 application.layout = html.Div([navbar,
-                       dash.page_container,
+                               html.Div(id="placeholder"),
+                               dash.page_container,
                                dcc.Store(id="config", storage_type="memory", data=json.load(open("config.json")))
-                       ], style={"overflow": "hidden"})
+                               ], style={"overflow": "hidden"})
 ConfigGetter.load_data()
+
 
 if __name__ == '__main__':
     application.run_server(debug=True)

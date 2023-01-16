@@ -2,8 +2,8 @@ from config_manager import ConfigGetter
 
 
 class SolarPanel:
-    def __init__(self, amount: int, efficiency: float, lifetime: int, decay_rate: float):
-        solar_config = ConfigGetter['solar']
+    def __init__(self, amount: int, efficiency: float, lifetime: int, decay_rate: float, config: dict):
+        solar_config = config['solar']
         self.efficiency = solar_config['efficiency']
         self.lifetime = solar_config['lifetime']
         self.decay_rate = solar_config['decay_rate']
