@@ -26,6 +26,5 @@ application.layout = html.Div([navbar,
                                ], style={"overflow": "hidden"})
 ConfigGetter.load_data()
 
-
 if __name__ == '__main__':
     application.run_server(debug=True)

@@ -18,7 +18,8 @@
     "lifetime": 25,
     "efficiency": 0.2,
     "decay_rate": 0.01,
-    "area": 1
+    "area": 1,
+    "max_power": 1
   },
   "STRATEGY":
   {

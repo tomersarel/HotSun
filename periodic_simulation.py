@@ -13,11 +13,13 @@ class PeriodicSimulation:
         self.demand = demand
         self.solar_rad = solar_rad
         self.daily_simulator = daily_simulator
-        self.result = pd.DataFrame(columns=['Date', 'Batteries', 'Solar', 'Buying', 'Selling', 'Lost', 'Storaged'])
-
+        self.result = pd.DataFrame(
+            columns=['Date', 'Batteries', 'Solar', 'Buying', 'Selling', 'Lost', 'Storaged', "NewBatteries",
+                     "AllBatteries", "NewSolarPanels", "AllSolarPanels"])
         self.state.batteries.append(Battery(periodic_strategy.batteries, self.start_date, config))
-        self.state.solar_panels.append(SolarPanel(periodic_strategy.solar_panels, 0.2, 1, 1, config))
-
+        self.state.solar_panels.append(SolarPanel(periodic_strategy.solar_panels, config))
+    
+    
     def start(self):
         logging.info(f"Start periodic simulation {self.start_date}-{self.end_date}")
 
