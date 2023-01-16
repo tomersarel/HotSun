@@ -55,8 +55,8 @@ class PostProcessor(ProcessManager):
             total_benefit += periodic_data[period_i][self.PERIODIC_PROFIT_INDEX] - \
                              periodic_data[period_i][self.PERIODIC_COST_INDEX]
         # saves the output
-        self.save_output(pd.DataFrame(periodic_data, columns=['periodic_cost', 'periodic_profit', 'periodic_pollute']))
-        return total_benefit
+        # self.save_output(pd.DataFrame(periodic_data, columns=['periodic_cost', 'periodic_profit', 'periodic_pollute']))
+        return pd.DataFrame(periodic_data, columns=['periodic_cost', 'periodic_profit', 'periodic_pollute']), total_benefit
 
     def calculate_periodic_cost(self, simulation_period_output: HourlySimulationDataOfPeriod,
                                 prices: HourlyPricesData,

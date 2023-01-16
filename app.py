@@ -26,8 +26,8 @@ logging.info("Process - End simulation")
 logging.info("Postprocess - Start computing results")
 # post process
 post_processor = PostProcessor()
-total_income = post_processor.run_post_processor()
-print(total_income)
+data, total_income = post_processor.run_post_processor()
+print(data, total_income)
 
 logging.info("GUI - Show results")
 # GUI
