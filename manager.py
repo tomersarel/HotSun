@@ -1,6 +1,8 @@
 import os
 import numpy as np
+import pandas as pd
 
+import period_strategy
 from df_objects import DemandHourlyStateData, SolarRadiationHourly
 from process_manager import ProcessManager
 from period_strategy import PeriodStrategy
@@ -8,6 +10,7 @@ from periodic_simulation import PeriodicSimulation
 from typing import Callable, List
 from imports import *
 from tqdm import tqdm
+from state import State
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'config.json')
 
@@ -18,9 +21,13 @@ class Manager(ProcessManager):
     saves the returned data.
     """
 
-    def __init__(self, hourly_electricity_demand: DemandHourlyStateData, objects_period_strategy: List[PeriodStrategy],
-                 periodic_available_area: np.array, hourly_solar_radiation: SolarRadiationHourly,
-                 daily_strategy: Callable):
+
+    def __init__(self,
+                 hourly_electricity_demand: DemandHourlyStateData,
+                 objects_period_strategy: list[period_strategy.PeriodStrategy],
+                 periodic_available_area: np.array,
+                 hourly_solar_radiation: SolarRadiationHourly,
+                 daily_strategy: Callable, config: dict):
         """
         initializing the Manager object.
         :param hourly_electricity_demand: a hourly forecast for the electricity demand
@@ -30,35 +37,41 @@ class Manager(ProcessManager):
         :param daily_strategy: a function which manages the energy for each year
         """
         super().__init__()
+        self.config = config
         self.hourly_electricity_demand = hourly_electricity_demand
-        self.objects_period_strategy = objects_period_strategy
+        strategy = pd.DataFrame.from_dict(config["STRATEGY"])
+        self.objects_period_strategy = [period_strategy.PeriodStrategy(row["solar_panel_purchased"], row["batteries_purchased"]) for index, row in strategy.iterrows()]
         self.periodic_available_area = periodic_available_area
         self.hourly_solar_radiation = hourly_solar_radiation
         self.daily_strategy = daily_strategy
         # prepare data for the simulation
-        self.current_state = State(self.start_date)
+        self.current_state = State(self.start_date, )
         logging.info(f"Manager was built successfully.")
 
-    def run_simulator(self) -> None:
+
+    def run_simulator(self) -> pd.DataFrame:
         """
         activates the simulator for all the time-periods: prepare the data, call the simulator and saves the output
         :return: None
         """
         logging.info(f"Manager: starts simulation")
         output = []
-        for period_i in tqdm(range(self.periods_amount), desc="Loading...", ):
+
+        bar = tqdm(range(self.periods_amount))
+        for period_i in bar:
             logging.info(f"Manager: enters {period_i} period of the simulation.")
             # create the period simulation object
             demand, solar_rad = self.slice_data_for_period(period_i)
             periodic_simulation = PeriodicSimulation(self.current_state, self.periods_length_in_days, demand, solar_rad,
-                                                     self.objects_period_strategy[period_i], self.daily_strategy)
+                                                     self.objects_period_strategy[period_i], self.daily_strategy, self.config)
             # activate the simulation for this period
             periodic_simulation.start()
             simulation_output_data, self.current_state = periodic_simulation.get_result()
-
             # save the simulation output
             self.save_output(period_i, simulation_output_data)
             output.append(simulation_output_data)
+
+
         output = pd.concat(output)
         output.reset_index(inplace=True, drop=True)
         return output

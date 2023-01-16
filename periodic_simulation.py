@@ -6,7 +6,7 @@ import period_strategy
 
 class PeriodicSimulation:
     def __init__(self, state: State, period_length: int, demand: np.array, solar_rad: np.array,
-                 periodic_strategy: period_strategy, daily_simulator: callable):
+                 periodic_strategy: period_strategy, daily_simulator: callable, config: dict):
         self.start_date = state.current_date
         self.end_date = state.current_date + datetime.timedelta(days=period_length)
         self.state = state
@@ -16,12 +16,10 @@ class PeriodicSimulation:
         self.result = pd.DataFrame(
             columns=['Date', 'Batteries', 'Solar', 'Buying', 'Selling', 'Lost', 'Storaged', "NewBatteries",
                      "AllBatteries", "NewSolarPanels", "AllSolarPanels"])
-
-        self.state.batteries.append(Battery(periodic_strategy.batteries, self.start_date))
-        self.state.solar_panels.append(SolarPanel(periodic_strategy.solar_panels, 0.2, 10000000000, 1, 1))
-        self.state.new_batteries = [Battery(periodic_strategy.batteries, self.start_date)]
-        self.state.new_panels = [SolarPanel(periodic_strategy.solar_panels, 0.2, 10000000000, 1, 1)]
-
+        self.state.batteries.append(Battery(periodic_strategy.batteries, self.start_date, config))
+        self.state.solar_panels.append(SolarPanel(periodic_strategy.solar_panels, config))
+    
+    
     def start(self):
         logging.info(f"Start periodic simulation {self.start_date}-{self.end_date}")
 
