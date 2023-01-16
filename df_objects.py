@@ -201,7 +201,7 @@ class HourlyPricesData(Cost):
                   "SolarPanelCapex", "SolarPanelOpex"]
 
         self.df = pd.read_csv("data/ElectricityPrices.csv", header=[0])
-        #print(self.df.columns)
+        # print(self.df.columns)
         self.df['Date'] = pd.to_datetime(self.df['Date'], dayfirst=True)
 
     def get_start_and_end_hour(self, start_date: datetime.datetime,
@@ -447,12 +447,8 @@ class HourlySimulationDataOfPeriod(PeriodsSimulation):
     This class implements ElectricityPrices for month radiation data
     """
 
-    def __init__(self, period_index: int):
-        titles = ["Date", "Batteries", "Solar", "Buying", "Selling", "Lost", "Storaged", "NewBatteries", "AllBatteries",
-                  "NewSolarPanels", "AllSolarPanels"]
-        self.df = pd.read_csv(f"simulation output/period{period_index}.csv", header=[0])
-        self.df['Date'] = pd.to_datetime(self.df['Date'], dayfirst=True)
-        #print("hello")
+    def __init__(self, simulation_output: pd.DataFrame, start_date: datetime.datetime, end_date: datetime.datetime):
+        self.df = simulation_output[(simulation_output['Date'] >= start_date) & (simulation_output['Date'] <= end_date)]
 
     # todo: consider change it to numpy arrays
     def get_new_batteries(self):

@@ -5,6 +5,7 @@ import unittest
 
 # import numpy
 import numpy as np
+import pandas
 import pandas as pd
 from tqdm import tqdm
 import xmltodict
@@ -21,9 +22,16 @@ class PostProcessor(ProcessManager):
     PERIODIC_PROFIT_INDEX = 1
     PERIODIC_POLLUTE_INDEX = 2
 
-    def __init__(self):
+    def __init__(self, simulation_output: pandas.DataFrame):
         super().__init__()
+        self.simulation_output = simulation_output
         logging.info(f"PostProcessor was built successfully.")
+
+    def get_period_dates_by_index(self, period_i: int) -> (datetime.datetime, datetime.datetime):
+        period_len = datetime.timedelta(days=self.periods_length_in_days)
+        start_date = self.start_date + period_i * period_len + datetime.timedelta(days=1)
+        end_date = start_date + period_len - datetime.timedelta(hours=1)
+        return start_date, end_date
 
     def run_post_processor(self):
         total_benefit = 0
@@ -33,10 +41,8 @@ class PostProcessor(ProcessManager):
         for period_i in tqdm(range(self.periods_amount), desc="Process Simulation Results...", ):
             logging.info(f"PostProcessor: enters {period_i} period of the post processor.")
             # loads the period data
-            # start_date, end_date = self.convert_period_index_to_dates(period_i)
-            simulation_period_output = HourlySimulationDataOfPeriod(period_i)
-            start_date = simulation_period_output.get_start_date()
-            end_date = simulation_period_output.get_end_date()
+            start_date, end_date = self.get_period_dates_by_index(period_i)
+            simulation_period_output = HourlySimulationDataOfPeriod(self.simulation_output, start_date, end_date)
             # calculates cost, profit and pollution
             periodic_data[period_i][self.PERIODIC_COST_INDEX] = self.calculate_periodic_cost(simulation_period_output,
                                                                                              prices,

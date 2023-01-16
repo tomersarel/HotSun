@@ -45,6 +45,7 @@ class Manager(ProcessManager):
         :return: None
         """
         logging.info(f"Manager: starts simulation")
+        output = []
         for period_i in tqdm(range(self.periods_amount), desc="Loading...", ):
             logging.info(f"Manager: enters {period_i} period of the simulation.")
             # create the period simulation object
@@ -57,6 +58,10 @@ class Manager(ProcessManager):
 
             # save the simulation output
             self.save_output(period_i, simulation_output_data)
+            output.append(simulation_output_data)
+        output = pd.concat(output)
+        output.reset_index(inplace=True, drop=True)
+        return output
 
     def slice_data_for_period(self, period_i: int):
         """

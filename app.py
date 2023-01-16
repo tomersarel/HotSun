@@ -20,12 +20,12 @@ logging.info("Preprocess - Files uploaded successfully")
 
 logging.info("Process - Start simulation")
 manager = manager.Manager(demand_hourly, [period_strategy.PeriodStrategy(5000, 100)] * 33, [], solar_rad_hourly, hourly_strategy.GreedyDailyStrategy())
-manager.run_simulator()
+simulation_output = manager.run_simulator()
 logging.info("Process - End simulation")
 
 logging.info("Postprocess - Start computing results")
 # post process
-post_processor = PostProcessor()
+post_processor = PostProcessor(simulation_output)
 data, total_income = post_processor.run_post_processor()
 print(data, total_income)
 
