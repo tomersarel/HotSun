@@ -68,9 +68,8 @@ class Manager(ProcessManager):
                                                      self.objects_period_strategy[period_i], self.daily_strategy, self.config)
             # activate the simulation for this period
             periodic_simulation.start()
+
             simulation_output_data, self.current_state = periodic_simulation.get_result()
-            # save the simulation output
-            self.save_output(period_i, simulation_output_data)
             output.append(simulation_output_data)
 
 

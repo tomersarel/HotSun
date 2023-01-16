@@ -175,7 +175,9 @@ class SolarProductionHourlyDataPVGIS(SolarRadiationHourly):
 
         titles = ['time', 'P', 'G(i)', 'H_sun',	'T2m', 'WS10m', 'Int']
 
-        self.df = pd.read_csv(file_path, names=titles)
+        self.df = pd.read_csv(file_path, header=[0])[['time', 'P']]
+        self.df['time'] = pd.to_datetime(self.df['time'], format="%Y%m%d:%H%M")
+
 
     def get_solar_rad_daily_by_range_of_date(self, start_date: datetime.datetime, end_date: datetime.datetime):
         """
@@ -190,11 +192,10 @@ class SolarProductionHourlyDataPVGIS(SolarRadiationHourly):
         curr_date = start_date
         production_daily_arr = []
         while curr_date < end_date:
-            production_arr = []
-            for i in range(24):
-                production_arr.append(float(self.df["P"][self.df["time"] ==
-                                                        curr_date.strftime(f"2016%m%d:{i:02d}09")].to_numpy()[0]))
-            production_daily_arr.append(production_arr)  # remove the month index
+            year = curr_date.year
+            curr_date = curr_date.replace(year=2016)
+            production_daily_arr.append(self.df[(self.df["time"] >= curr_date) & (self.df["time"] < curr_date + datetime.timedelta(days=1))]['P'].to_numpy())  # remove the month index
+            curr_date = curr_date.replace(year=year)
             curr_date += datetime.timedelta(days=1)
 
         return production_daily_arr
