@@ -8,14 +8,12 @@ import hourly_strategy
 import sys
 import os
 
-"""if os.path.exists("progress.txt"):
-    os.remove("progress.txt")"""
-
+dash.register_page(__name__)
 cache = diskcache.Cache("./cache")
 background_callback_manager = DiskcacheLongCallbackManager(cache)
 dash.register_page(__name__, background_callback_manager=background_callback_manager)
 
-colors = {"Solar": "#ffe205", "Batteries": "gray", "Buying": "#ec4141", "Selling": "#5fbb4e", "Storaged": "#9edbf9",
+colors = {"Solar": "#ffe205", "Batteries": "#d4d4d4", "Buying": "#ec4141", "Selling": "#5fbb4e", "Storaged": "#9edbf9",
           "Lost": "gray"}
 
 sidebar = html.Div([html.H4("Control Panel"),
@@ -67,6 +65,7 @@ def get_display(config, df):
                         ], style={"overflow": "auto", "height": "92vh"})
     return display
 
+loading = dcc.Store(id='loading-value')
 
 layout = html.Div([html.Div(id="placeholder"), dbc.Row([dbc.Col(sidebar, width=3),
                                                         dbc.Col(id="display", width=9)]),
@@ -75,6 +74,7 @@ layout = html.Div([html.Div(id="placeholder"), dbc.Row([dbc.Col(sidebar, width=3
                                       style={"position": "absolute", "left": "50%", "top": "50%", "margin-top": "-50px",
                                              "margin-left": "-150px"}),
                              dcc.Interval(id='timer_progress', interval=1000),
+                             loading,
                              dcc.Location(id='url')], id="loading"),
                    ])
 
@@ -144,7 +144,7 @@ def get_parameters(config):
     Output("paramerts", "children"),
     Output("df", "data"),
     Output("display", "children"),
-Output("sidebar", "style"),
+    Output("sidebar", "style"),
     Input("run", "n_clicks"),
     State("config", "data"),
     manager=background_callback_manager,
@@ -164,8 +164,8 @@ def process(n_clicks, config):
     logging.info("Preprocess - Files uploaded successfully")
 
     logging.info("Process - Start simulation")
-    manager = Manager(demand_hourly, [period_strategy.PeriodStrategy(5000, 100)] * 33, [], solar_rad_hourly,
-                      hourly_strategy.GreedyDailyStrategy())
+    manager = Manager(demand_hourly, [period_strategy.PeriodStrategy(10000, 100) for i in range(33)], [], solar_rad_hourly,
+                      hourly_strategy.GreedyDailyStrategy(), config)
     output = manager.run_simulator()
     logging.info("Process - End simulation")
 
