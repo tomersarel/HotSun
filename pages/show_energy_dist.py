@@ -6,7 +6,6 @@ from df_objects import *
 from manager import Manager
 import hourly_strategy
 import sys
-import os
 
 dash.register_page(__name__)
 cache = diskcache.Cache("./cache")
@@ -25,7 +24,7 @@ sidebar = html.Div([html.H4("Control Panel"),
 
 def generate_year_enr_graph(start_year, end_year, df, resample='D'):
     data = df[(df['Date'] >= datetime.datetime(year=start_year, day=1, month=1)) & (
-                df['Date'] < datetime.datetime(year=end_year, day=1, month=1))]
+            df['Date'] < datetime.datetime(year=end_year, day=1, month=1))]
     data = data.resample(resample, on='Date', convention="start").sum()
     return [go.Bar(x=data.index, y=data[col], name=col, marker={'color': colors[col], 'line.width': 0}) for col in
             data.columns]
@@ -65,7 +64,6 @@ def get_display(config, df):
                         ], style={"overflow": "auto", "height": "92vh"})
     return display
 
-loading = dcc.Store(id='loading-value')
 
 layout = html.Div([html.Div(id="placeholder"), dbc.Row([dbc.Col(sidebar, width=3),
                                                         dbc.Col(id="display", width=9)]),
@@ -73,9 +71,7 @@ layout = html.Div([html.Div(id="placeholder"), dbc.Row([dbc.Col(sidebar, width=3
                                        dbc.Progress(id="progress_bar", style={'width': '300px', 'height': '20px'})],
                                       style={"position": "absolute", "left": "50%", "top": "50%", "margin-top": "-50px",
                                              "margin-left": "-150px"}),
-                             dcc.Interval(id='timer_progress', interval=1000),
-                             loading,
-                             dcc.Location(id='url')], id="loading"),
+                             dcc.Interval(id='timer_progress', interval=1000)], id="loading"),
                    ])
 
 loading_style = {"display": 'block', 'position': 'absolute',
@@ -111,7 +107,8 @@ def update_yearly_graph(value, df):
 def generate_day_enr_graph(date, df):
     df = df[(df['Date'] >= date) & (df['Date'] < date + datetime.timedelta(days=1))]
     df = df.set_index('Date')
-    return [go.Bar(x=df.index.hour, y=df[col], name=col, marker={'color': colors[col], 'line.width': 0}) for col in df.columns]
+    return [go.Bar(x=df.index.hour, y=df[col], name=col, marker={'color': colors[col], 'line.width': 0}) for col in
+            df.columns]
 
 
 @callback(
@@ -134,9 +131,12 @@ def get_parameters(config):
         if parameter not in ["START_YEAR", "END_YEAR", "PERIODS_DAYS_AMOUNT"]:
             parameter = parameter.replace("_", " ").lower().capitalize()
             if type(value) == int:
-                result.append(dbc.Row([dbc.Col(f"{parameter}:", width="auto"), dbc.Col(dbc.Input(placeholder=f"{value}", type="number"))], className="my-2"))
+                result.append(dbc.Row(
+                    [dbc.Col(f"{parameter}:", width="auto"), dbc.Col(dbc.Input(placeholder=f"{value}", type="number"))],
+                    className="my-2"))
             elif type(value) == dict:
-                result.append(dbc.Row(dbc.Accordion(dbc.AccordionItem(get_parameters(value), title=parameter), start_collapsed=True)))
+                result.append(dbc.Row(
+                    dbc.Accordion(dbc.AccordionItem(get_parameters(value), title=parameter), start_collapsed=True)))
     return result
 
 
@@ -164,7 +164,8 @@ def process(n_clicks, config):
     logging.info("Preprocess - Files uploaded successfully")
 
     logging.info("Process - Start simulation")
-    manager = Manager(demand_hourly, [period_strategy.PeriodStrategy(10000, 100) for i in range(33)], [], solar_rad_hourly,
+    manager = Manager(demand_hourly, [period_strategy.PeriodStrategy(10000, 100) for i in range(33)], [],
+                      solar_rad_hourly,
                       hourly_strategy.GreedyDailyStrategy(), config)
     output = manager.run_simulator()
     logging.info("Process - End simulation")
