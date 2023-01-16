@@ -6,6 +6,7 @@ from df_objects import *
 from manager import Manager
 import hourly_strategy
 import sys
+from post_processor import PostProcessor
 
 dash.register_page(__name__)
 cache = diskcache.Cache("./cache")
@@ -14,11 +15,12 @@ dash.register_page(__name__, background_callback_manager=background_callback_man
 
 colors = {"Solar": "#ffe205", "Batteries": "#d4d4d4", "Buying": "#ec4141", "Selling": "#5fbb4e", "Storaged": "#9edbf9",
           "Lost": "gray"}
+energy_columns = ['Batteries', 'Solar', 'Buying', 'Selling', 'Lost', 'Storaged']
 
 sidebar = html.Div([html.H4("Control Panel"),
                     dbc.Button("Run", id="run", color="primary", style={"width": "50%"}, className="my-2 text-center"),
                     html.Div(id="paramerts", className="my-2"),
-                    dcc.Store(id="df")],
+                    dcc.Store(id="df_energy"), dcc.Store(id="df_finance")],
                    style={"display": "None"}, id="sidebar", className="mx-3 my-3")
 
 
@@ -27,10 +29,10 @@ def generate_year_enr_graph(start_year, end_year, df, resample='D'):
             df['Date'] < datetime.datetime(year=end_year, day=1, month=1))]
     data = data.resample(resample, on='Date', convention="start").sum()
     return [go.Bar(x=data.index, y=data[col], name=col, marker={'color': colors[col], 'line.width': 0}) for col in
-            data.columns]
+            energy_columns]
 
 
-def get_display(config, df):
+def get_display(config, df_energy, df_finance):
     display_summery = html.Div([html.Div([
         dbc.Card([dbc.CardBody([
             html.H1(f"-", className="card-title", style={"text-align": "center", "font-size": 48}),
@@ -41,7 +43,7 @@ def get_display(config, df):
             )])], style={"width": "18rem"}, className="mx-2 my-2") for i in range(8)
     ], className="row"),
         dcc.Graph(figure=go.Figure(
-            data=generate_year_enr_graph(config['START_YEAR'], config['END_YEAR'], dict_to_dataframe(df), 'Y'),
+            data=generate_year_enr_graph(config['START_YEAR'], config['END_YEAR'], dict_to_dataframe(df_energy), 'Y'),
             layout=go.Layout(barmode='stack', title=f"yearly energy distribution")))
     ])
     display_energy = html.Div([dcc.Slider(id="period_slider",
@@ -51,14 +53,35 @@ def get_display(config, df):
                                           marks={i: '{}'.format(i) for i in
                                                  range(config["START_YEAR"], config["END_YEAR"] - 1)},
                                           value=config["START_YEAR"]),
-                               dcc.Graph(id='yearlyGraph', style={"height": "600px"}),
+                               dcc.Graph(id='yearlyEnergyGraph'),
                                dcc.Graph(id='dailyGraph', style={"display": "None"})
                                ])
-    display_finance = html.Div()
+    df_finance = pd.DataFrame(df_finance)
+    display_finance = html.Div([dcc.Graph(id='yearlyCostGraph',
+                                          figure=go.Figure(
+                                              data=go.Bar(x=df_finance.index, y=df_finance['periodic_cost'],
+                                                          name='cost', marker={'color': 'green', 'line.width': 0}),
+                                              layout=go.Layout(barmode='stack', title=f"total cost per period")),
+                                          ),
+                                dcc.Graph(id='yearlyProfitGraph',
+                                          figure=go.Figure(
+                                              data=go.Bar(x=df_finance.index, y=df_finance['periodic_profit'],
+                                                          name='cost', marker={'color': 'green', 'line.width': 0}),
+                                              layout=go.Layout(barmode='stack', title=f"total profit per period")),
+                                          )
+                                ])
+
+    display_pollution = html.Div([dcc.Graph(id='yearlyPollutionGraph',
+                                            figure=go.Figure(
+                                                data=go.Bar(x=df_finance.index, y=df_finance['periodic_pollute'],
+                                                            name='cost', marker={'color': 'red', 'line.width': 0}),
+                                                layout=go.Layout(barmode='stack', title=f"total pollution per period")),
+                                            style={"height": "600px"})])
 
     display = html.Div([dbc.Accordion([dbc.AccordionItem(display_summery, title='Summery'),
                                        dbc.AccordionItem(display_energy, title='Energy'),
-                                       dbc.AccordionItem(display_finance, title='Finance')],
+                                       dbc.AccordionItem(display_finance, title='Finance'),
+                                       dbc.AccordionItem(display_pollution, title='Pollution')],
                                       always_open=True),
 
                         ], style={"overflow": "auto", "height": "92vh"})
@@ -87,15 +110,15 @@ def dict_to_dataframe(df):
     df['Date'] = pd.to_datetime(df['Date'], dayfirst=True)
     df.set_index('Date')
     for coloumn in df.columns:
-        if coloumn != "Date":
+        if coloumn in energy_columns:
             df[coloumn] = pd.to_numeric(df[coloumn])
     return df
 
 
 @callback(
-    Output('yearlyGraph', 'figure'),
+    Output('yearlyEnergyGraph', 'figure'),
     Input('period_slider', 'value'),
-    State("df", "data")
+    State("df_energy", "data")
 )
 def update_yearly_graph(value, df):
     fig = go.Figure(data=generate_year_enr_graph(value, value + 1, dict_to_dataframe(df)),
@@ -108,14 +131,14 @@ def generate_day_enr_graph(date, df):
     df = df[(df['Date'] >= date) & (df['Date'] < date + datetime.timedelta(days=1))]
     df = df.set_index('Date')
     return [go.Bar(x=df.index.hour, y=df[col], name=col, marker={'color': colors[col], 'line.width': 0}) for col in
-            df.columns]
+            energy_columns]
 
 
 @callback(
     Output('dailyGraph', 'figure'),
     Output('dailyGraph', 'style'),
-    Input('yearlyGraph', 'clickData'),
-    State("df", "data"),
+    Input('yearlyEnergyGraph', 'clickData'),
+    State("df_energy", "data"),
     prevent_initial_call=True
 )
 def update_daily_graph(clickData, df):
@@ -142,7 +165,8 @@ def get_parameters(config):
 
 @callback(
     Output("paramerts", "children"),
-    Output("df", "data"),
+    Output("df_energy", "data"),
+    Output("df_finance", "data"),
     Output("display", "children"),
     Output("sidebar", "style"),
     Input("run", "n_clicks"),
@@ -160,25 +184,34 @@ def process(n_clicks, config):
     print("start")
     logging.info("Preprocess - Uploading files")
     demand_hourly = DemandHourlyStateData()
-    solar_rad_hourly = SolarRadiationHourlyMonthData()
+    if config["solar"]["datasource"] == "PVGIS":
+        solar_rad_hourly = SolarProductionHourlyDataPVGIS(config['LOCATION']['longitude'],
+                                                          config['LOCATION']['latitude'],
+                                                          config['solar']['peakpower'],
+                                                          config['solar']['loss'])
+    else:
+        solar_rad_hourly = SolarRadiationHourlyMonthData()
+
     logging.info("Preprocess - Files uploaded successfully")
 
     logging.info("Process - Start simulation")
     manager = Manager(demand_hourly, [period_strategy.PeriodStrategy(10000, 100) for i in range(33)], [],
                       solar_rad_hourly,
                       hourly_strategy.GreedyDailyStrategy(), config)
-    output = manager.run_simulator()
+    output_energy = manager.run_simulator()
     logging.info("Process - End simulation")
 
     logging.info("Postprocess - Start computing results")
-    # post process
+    post_processor = PostProcessor(output_energy)
+    output_post_processor, total_income = post_processor.run_post_processor()
     logging.info("Postprocess - Start computing results")
 
     file_prog.truncate()
     file_prog.close()
     sys.stderr = std_err_backup
-    return get_parameters(config), output.to_dict('records'), get_display(config, output), \
-           {"height": "92vh", "width": "100%", "overflow-y": "auto", "overflow-x": "hidden"}
+    return get_parameters(config), output_energy.to_dict('records'), output_post_processor.to_dict('records'), \
+           get_display(config, output_energy, output_post_processor), {"height": "92vh", "width": "100%",
+                                                                       "overflow-y": "auto", "overflow-x": "hidden"}
 
 
 @callback(

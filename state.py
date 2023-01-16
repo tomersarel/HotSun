@@ -9,5 +9,3 @@ class State:
         self.solar_panels = []
         self.current_date = start_date
         self.occupied_area = 0
-        self.new_batteries = []
-        self.new_panels = []

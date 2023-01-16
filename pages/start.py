@@ -19,13 +19,13 @@ def calculate_periods_amount(start, end, length):
     return (end - start).days // length
 
 
-def get_screen(i, period, start, end, lon, lat, startegy):
+def get_screen(i, period, start, end, location, startegy):
     if i == 0:
         town_select = dcc.Dropdown(id="select",
                                    placeholder='Select your city',
-                                   options=[{"label": city, "value": f"{loc[0]}/{loc[1]}"} for (city, loc) in
+                                   options=[{"label": city, "value": f"{loc[0]}/{loc[1]}/{city}"} for (city, loc) in
                                             df_objects.get_town_loc_by_name()], persistence=True,
-                                   persistence_type='local', value="Tel Aviv-Yafo")
+                                   persistence_type='local', value="32.08/34.78")
         return html.Div([dbc.Row([dbc.Col(html.H2("Choose a city"))]),
                          dbc.Row([dbc.Col(html.Big("description of this paramter like thie like"))]),
                          dbc.Row([dbc.Col(html.H1(" "))]),
@@ -91,8 +91,9 @@ def get_screen(i, period, start, end, lon, lat, startegy):
                          ],
                         style={"padding": "20px"})
     if i == 4:
+        location = location.split("/")
         return html.Div([dbc.Row([dbc.Col(html.H2("Run the simulation"))]),
-                         dbc.Row([dbc.Col(html.Big(f"{start}-{end} for period of {period} days at {lat}/{lon}"))]),
+                         dbc.Row([dbc.Col(html.Big(f"{start}-{end} for period of {period} days at {location[0]}/{location[1]} - {location[2]}"))]),
                          dbc.Row([dbc.Col(html.P("\n\n\n"))]),
                          dbc.Row([dbc.Col(dbc.Button("Run", id="run1", href="/show-energy-dist"))]),
                          dbc.Row([dbc.Col(startegy)])
@@ -132,8 +133,8 @@ layout = html.Div([dbc.Card(
     State('purchase-strategy', 'data')
 )
 def update_output(n_clicks1, n_clicks2, period, start, end, loc, strategy):
-    return get_screen(n_clicks1 - n_clicks2, period, start, end, loc[0],
-                      loc[1], strategy), n_clicks1 - n_clicks2 == 0 or n_clicks1 - n_clicks2 == 3, n_clicks1 - n_clicks2 == 4, f"{n_clicks1 - n_clicks2 + 1}/5"
+    return get_screen(n_clicks1 - n_clicks2, period, start, end, loc,
+                      strategy), n_clicks1 - n_clicks2 == 0 or n_clicks1 - n_clicks2 == 3, n_clicks1 - n_clicks2 == 4, f"{n_clicks1 - n_clicks2 + 1}/5"
 
 
 @callback(
@@ -155,7 +156,8 @@ def update_config(n, period, start, end, loc, strategy):
     config["END_YEAR"] = int(end[:4])
     config["PERIODS_DAYS_AMOUNT"] = period
     config['STRATEGY'] = json.loads(strategy)
-    config["LOCATION"] = loc
+    loc = loc.split("/")
+    config["LOCATION"] = {"latitude": float(loc[0]), "longitude": float(loc[1]), "name": loc[2]}
     return config
 
 
@@ -194,7 +196,7 @@ def change_date(start, end):
     prevent_initial_call=True
 )
 def update_output(value):
-    return float(value.split("/")[0]), float(value.split("/")[1])
+    return value
 
 
 @callback(
@@ -246,6 +248,6 @@ def update_output(content, file_name, current, start, end, length):
 
     if result[0] is None:
         period_amount = calculate_periods_amount(start, end, length)
-        result[0] = pandas.DataFrame(data={'period': [i + 1 for i in range(period_amount)], 'solar_panel_purchased': [5000] * period_amount,
-                  'batteries_purchased': [100] * period_amount})
+        result[0] = pandas.DataFrame(data={'period': [i + 1 for i in range(period_amount)], 'solar_panel_purchased': [50] * period_amount,
+                  'batteries_purchased': [10] * period_amount})
     return result[0][['solar_panel_purchased', 'batteries_purchased']].to_json(), result[1], result[2]

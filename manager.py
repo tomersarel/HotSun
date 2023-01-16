@@ -47,7 +47,7 @@ class Manager(ProcessManager):
         self.hourly_solar_radiation = hourly_solar_radiation
         self.daily_strategy = daily_strategy
         # prepare data for the simulation
-        self.current_state = State(self.start_date, )
+        self.current_state = State(self.start_date)
         logging.info(f"Manager was built successfully.")
 
 
