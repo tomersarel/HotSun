@@ -60,6 +60,38 @@ class DemandHourlyStateData(DemandHourly):
         return [day[1:] for day in period]  # remove Date col
 
 
+class DemandHourlyCityData(DemandHourly):
+    """
+    This class implements DemandHourly (kWh) for state data
+    """
+
+    def __init__(self, city):
+        self.df = pd.read_csv("data/hourlyConsumptionPrediction.csv", header=[0])
+        self.df['Date'] = pd.to_datetime(self.df['Date'], dayfirst=True)
+        city_df = pd.read_csv("data/cities_usage_ratio.csv", names=['Name', 'TotalConsumptionPerResident',
+                                                                    'TotalGovernmentConsumptionJurisdiction',
+                                                                    'Population', 'TotalEnergy'])
+        self.city = city
+        self.city_usage = float(city_df["TotalEnergy"][city_df['Name'] == self.city].to_numpy()[0])
+        self.city_ratio = self.city_usage / 76111512  # TotalUsage 2021
+
+    def get_demand_hourly_by_range_of_date(self, start_date: datetime.datetime, end_date: datetime.datetime):
+        """
+        return the predicted consumption in given range of date (including start_date excluding end_date)
+        :param end_date: the start date
+        :param start_date: the end date
+        :return: arr of the power consumption at that date range by hour
+        """
+
+        # make sure the dates are at the beginning of the day
+        start_date = start_date.replace(hour=0)
+        end_date = end_date.replace(hour=0)
+
+        period = self.df[(self.df['Date'] >= start_date) & (self.df['Date'] < end_date)].to_numpy()
+
+        return [day[1:]*self.city_ratio for day in period]  # remove Date col
+
+
 class SolarRadiationHourly(ABC):
     """
     This class wraps the solar radiation db
@@ -147,13 +179,17 @@ class SolarProductionHourlyDataPVGIS(SolarRadiationHourly):
         :param start_date: the end date
         :return: arr of the power consumption at that date range by hour
         """
-        pass
+        start_date = start_date.replace(hour=0)
+        end_date = end_date.replace(hour=0)
 
-    def get_solar_production_hourly(self, date: datetime.datetime):
-        """
+        curr_date = start_date
+        production_daily_arr = []
+        while curr_date < end_date:
+            production_arr = []
+            for i in range(24):
+                production_arr.append(float(self.df["P"][self.df["time"] ==
+                                                        curr_date.strftime(f"2016%m%d:{i:02d}09")].to_numpy()[0]))
+            production_daily_arr.append(production_arr)  # remove the month index
+            curr_date += datetime.timedelta(days=1)
 
-        :param date:
-        :return:
-        """
-        return float(self.df["P"][self.df["time"] == date.strftime("2016%m%d:%H09")].to_numpy()[0])
-
+        return production_daily_arr

@@ -12,4 +12,7 @@ class SolarPanel:
 
     def calc_energy_gen_hourly(self, radiation):
         # TODO: Calc pv production
-        return self.amount * self.area * self.efficiency * radiation * 0.75  # 0.75 is a performance ratio
+        if ConfigGetter['solar']['datasource'] != 'PVGIS':
+            return self.amount * self.area * self.efficiency * radiation * 0.75  # 0.75 is a performance ratio
+        else:
+            return radiation * self.amount

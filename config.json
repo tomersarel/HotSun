@@ -16,6 +16,15 @@
     "lifetime": 25,
     "efficiency": 0.2,
     "decay_rate": 0.01,
-    "area": 1
+    "area": 1,
+    "datasource": "PVGIS",
+    "peakpower": 0.26,
+    "loss": 85
+  },
+  "location":
+  {
+    "longitude": 30,
+    "latitude": 30,
+    "name": "Tel Aviv-Yafo"
   }
 }

@@ -1,7 +1,8 @@
 import os
 import numpy as np
-
-from df_objects import DemandHourlyStateData, SolarRadiationHourly
+from config_manager import ConfigGetter
+from df_objects import DemandHourlyStateData, SolarRadiationHourly, SolarRadiationHourlyMonthData, \
+    SolarProductionHourlyDataPVGIS
 from period_strategy import PeriodStrategy
 from periodic_simulation import PeriodicSimulation
 from typing import Callable, List

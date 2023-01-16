@@ -12,8 +12,11 @@ logging.info("Start application")
 ConfigGetter.load_data()
 
 logging.info("Preprocess - Uploading files")
-demand_hourly = DemandHourlyStateData()
-solar_rad_hourly = SolarRadiationHourlyMonthData()
+demand_hourly = DemandHourlyCityData("Tel Aviv-Yafo")
+solar_rad_hourly = SolarProductionHourlyDataPVGIS(ConfigGetter['location']['longitude'],
+                                                  ConfigGetter['location']['latitude'],
+                                                  ConfigGetter['solar']['peakpower'],
+                                                  ConfigGetter['solar']['loss'])
 logging.info("Preprocess - Files uploaded successfully")
 
 logging.info("Process - Start simulation")
