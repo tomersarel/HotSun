@@ -51,7 +51,7 @@ class Manager(ProcessManager):
         logging.info(f"Manager was built successfully.")
 
 
-    def run_simulator(self) -> pd.DataFrame:
+    def run_simulator(self, set_progress) -> pd.DataFrame:
         """
         activates the simulator for all the time-periods: prepare the data, call the simulator and saves the output
         :return: None
@@ -71,6 +71,7 @@ class Manager(ProcessManager):
 
             simulation_output_data, self.current_state = periodic_simulation.get_result()
             output.append(simulation_output_data)
+            set_progress((str(period_i + 1), str(self.periods_amount), "Running Simulation...", f"{round((period_i + 1) / self.periods_amount * 100)}%"))
 
 
         output = pd.concat(output)
