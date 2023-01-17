@@ -33,7 +33,7 @@ class PostProcessor(ProcessManager):
         end_date = start_date + period_len - datetime.timedelta(hours=1)
         return start_date, end_date
 
-    def run_post_processor(self):
+    def run_post_processor(self, set_progress):
         total_benefit = 0
         periodic_data = np.zeros(shape=(self.periods_amount, self.DATA_TYPES_AMOUNT))
         prices = HourlyPricesData()
@@ -60,8 +60,9 @@ class PostProcessor(ProcessManager):
                 end_date)
             total_benefit += periodic_data[period_i][self.PERIODIC_PROFIT_INDEX] - \
                              periodic_data[period_i][self.PERIODIC_COST_INDEX]
-        # saves the output
-        # self.save_output(pd.DataFrame(periodic_data, columns=['periodic_cost', 'periodic_profit', 'periodic_pollute']))
+
+            set_progress((str(period_i + 1), str(self.periods_amount), "Calculate incomes and pollutes...", f"{round((period_i + 1) / self.periods_amount * 100)}%"))
+
         return pd.DataFrame(periodic_data, columns=['periodic_cost', 'periodic_profit', 'periodic_pollute']), total_benefit
 
     def calculate_periodic_cost(self, simulation_period_output: HourlySimulationDataOfPeriod,
