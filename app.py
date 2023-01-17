@@ -41,6 +41,27 @@ application.layout = html.Div([navbar,
 ConfigGetter.load_data()
 
 
+def get_zero_stragedy_to_post_processor():
+    return pd.read_csv("post processor/zero_periodic_data.csv", header=[0])
+
+def calculate_summery(results: pd.DataFrame, zero_results: pd.DataFrame):
+    out_cost_2050 = results["periodic_cost"].iloc[-1]
+    zero_cost_2050 = zero_results["zero_periodic_cost"].iloc[-1]
+    out_profit_2050 = zero_results["periodic_profit"].iloc[-1]
+    out_pollution_2050 = results["periodic_pollute"].iloc[-1]
+    zero_pollution_2050 = zero_results["zero_periodic_pollute"].iloc[-1]
+    if zero_cost_2050 == 0:
+        relative_cost_of_2050 = out_cost_2050
+    else:
+        relative_cost_of_2050 = (out_cost_2050 - zero_cost_2050) / zero_cost_2050
+    if out_pollution_2050 == 0:
+        relative_pollution_of_2050 = out_pollution_2050
+    else:
+        relative_pollution_of_2050 = (out_pollution_2050 - zero_pollution_2050) / zero_pollution_2050
+    return relative_cost_of_2050, out_profit_2050, relative_pollution_of_2050
+
+
+
 @application.long_callback(
     Output("paramerts", "children"),
     Output("df_energy", "data"),
@@ -89,6 +110,7 @@ def func(set_progress, n, config):
     logging.info("Postprocess - Start computing results")
     post_processor = PostProcessor(output_energy)
     output_post_processor, total_income = post_processor.run_post_processor(set_progress)
+    zero_post_processor = get_zero_stragedy_to_post_processor() # todo: use it in the display
     logging.info("Postprocess - Start computing results")
 
     set_progress(("1", "1", "Displaying results...", "100%"))
