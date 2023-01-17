@@ -5,7 +5,7 @@ from df_objects import DemandHourlyStateData, SolarRadiationHourly, SolarRadiati
     SolarProductionHourlyDataPVGIS
 import pandas as pd
 import period_strategy
-from df_objects import DemandHourlyStateData, SolarRadiationHourly
+from df_objects import DemandHourlyStateData, SolarRadiationHourly, DemandHourlyCityData
 from process_manager import ProcessManager
 from period_strategy import PeriodStrategy
 from periodic_simulation import PeriodicSimulation
@@ -25,7 +25,7 @@ class Manager(ProcessManager):
 
 
     def __init__(self,
-                 hourly_electricity_demand: DemandHourlyStateData,
+                 hourly_electricity_demand: DemandHourlyCityData,
                  objects_period_strategy: list[period_strategy.PeriodStrategy],
                  periodic_available_area: np.array,
                  hourly_solar_radiation: SolarRadiationHourly,

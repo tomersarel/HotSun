@@ -41,8 +41,10 @@ application.layout = html.Div([navbar,
 ConfigGetter.load_data()
 
 
-def get_zero_stragedy_to_post_processor():
-    return pd.read_csv("post processor/zero_periodic_data.csv", header=[0])
+def get_zero_stragedy_to_post_processor(city_ratio):
+    zero_dp = pd.read_csv("post processor/zero_periodic_data.csv", header=[0])
+    zero_dp.multiply(city_ratio)
+    return zero_dp
 
 def calculate_summery(results: pd.DataFrame, zero_results: pd.DataFrame):
     out_cost_2050 = results["periodic_cost"].iloc[-1]
@@ -88,7 +90,7 @@ def func(set_progress, n, config):
     print("start")
     logging.info("Preprocess - Uploading files")
     set_progress(("0", "1", "Gathering Data...", "100%"))
-    demand_hourly = DemandHourlyStateData()
+    demand_hourly = DemandHourlyCityData() # todo: fill city
     if config["solar"]["datasource"] == "PVGIS":
         solar_rad_hourly = SolarProductionHourlyDataPVGIS(config['LOCATION']['longitude'],
                                                           config['LOCATION']['latitude'],
@@ -110,7 +112,7 @@ def func(set_progress, n, config):
     logging.info("Postprocess - Start computing results")
     post_processor = PostProcessor(output_energy)
     output_post_processor, total_income = post_processor.run_post_processor(set_progress)
-    zero_post_processor = get_zero_stragedy_to_post_processor() # todo: use it in the display
+    zero_post_processor = get_zero_stragedy_to_post_processor(demand_hourly.city_ratio) # todo: use it in the display
     logging.info("Postprocess - Start computing results")
 
     set_progress(("1", "1", "Displaying results...", "100%"))

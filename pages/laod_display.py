@@ -1,5 +1,6 @@
 from imports import *
 from df_objects import *
+import plotly.express as px
 
 
 energy_columns = ['Batteries', 'Solar', 'Buying', 'Selling', 'Lost', 'Storaged']
@@ -48,6 +49,7 @@ def get_display(config, df_energy, df_finance):
             data=generate_year_enr_graph(config['START_YEAR'], config['END_YEAR'], dict_to_dataframe(df_energy), 'Y'),
             layout=go.Layout(barmode='stack', title=f"yearly energy distribution")))
     ])
+
     display_energy = html.Div([dcc.Slider(id="period_slider",
                                           min=config["START_YEAR"],
                                           max=config["END_YEAR"] - 1,
@@ -58,12 +60,16 @@ def get_display(config, df_energy, df_finance):
                                dcc.Graph(id='yearlyEnergyGraph'),
                                dcc.Graph(id='dailyGraph', style={"display": "None"})
                                ])
+
     df_finance = pd.DataFrame(df_finance)
     display_finance = html.Div([dcc.Graph(id='yearlyCostGraph',
-                                          figure=go.Figure(
+                                          figure=go.line(
                                               data=go.Bar(x=df_finance.index, y=df_finance['periodic_cost'],
-                                                          name='cost', marker={'color': 'green', 'line.width': 0}),
-                                              layout=go.Layout(barmode='stack', title=f"total cost per period")),
+                                                          name='cost', marker={'color': 'green'}),
+                                              layout=go.Layout(barmode='stack',
+                                                               title=f"total cost per period")).add_trace(
+                                              x=df_finance.index, y=df_finance['zero_periodic_cost'],
+                                              name='zero_cost', marker={'color': 'red'}),
                                           ),
                                 dcc.Graph(id='yearlyProfitGraph',
                                           figure=go.Figure(

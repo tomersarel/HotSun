@@ -94,7 +94,8 @@ class DemandHourlyCityData(DemandHourly):
 
         period = self.df[(self.df['Date'] >= start_date) & (self.df['Date'] < end_date)].to_numpy()
 
-        return [day[1:]*self.city_ratio for day in period]  # remove Date col
+        return [day[1:] for day in period]  # remove Date col
+        # return [day[1:]*self.city_ratio for day in period]  # remove Date col
 
 
 class SolarRadiationHourly(ABC):

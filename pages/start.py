@@ -208,7 +208,7 @@ def update_output(value):
 )
 def update_output(n, length, start, end):
     period_amount = calculate_periods_amount(start, end, length)
-    df = {'period': [i + 1 for i in range(period_amount)], 'solar_panel_purchased': [0] * period_amount, 'batteries_purchased': [0] * period_amount}
+    df = {'period': [i + 1 for i in range(period_amount)], 'solar_panel_purchased': [5000] * period_amount, 'batteries_purchased': [100] * period_amount}
     df = pandas.DataFrame(data=df)
     return dcc.send_data_frame(df.to_csv, "template.csv", index=False)
 

@@ -20,7 +20,7 @@
     "decay_rate": 0.01,
     "area": 1,
     "max_power": 1,
-    "datasource": "PVGIS",
+    "datasource": "",
     "peakpower": 0.26,
     "loss": 85
   },
