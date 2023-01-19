@@ -198,7 +198,7 @@ class SolarProductionHourlyDataPVGIS(SolarRadiationHourly):
             curr_date = curr_date.replace(year=year)
             curr_date += datetime.timedelta(days=1)
 
-        return production_daily_arr
+        return np.array(production_daily_arr)/1000
 
 
 class Cost(ABC):

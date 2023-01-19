@@ -7,9 +7,9 @@
   "END_YEAR": 2050,
   "battery":
   {
-    "capacity": 200,
+    "capacity": 5000,
     "lifetime": 25,
-    "charge_rate": 20000,
+    "charge_rate": 1500,
     "efficiency": 0.9,
     "decay_rate": 0.2
   },
@@ -22,7 +22,7 @@
     "max_power": 1,
     "datasource": "PVGIS",
     "peakpower": 0.26,
-    "loss": 85
+    "loss": 2
   },
   "LOCATION":
   {

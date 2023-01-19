@@ -248,6 +248,6 @@ def update_output(content, file_name, current, start, end, length):
 
     if result[0] is None:
         period_amount = calculate_periods_amount(start, end, length)
-        result[0] = pandas.DataFrame(data={'period': [i + 1 for i in range(period_amount)], 'solar_panel_purchased': [50] * period_amount,
-                  'batteries_purchased': [10] * period_amount})
+        result[0] = pandas.DataFrame(data={'period': [i + 1 for i in range(period_amount)], 'solar_panel_purchased': [10000] * period_amount,
+                  'batteries_purchased': [200] * period_amount})
     return result[0][['solar_panel_purchased', 'batteries_purchased']].to_json(), result[1], result[2]
