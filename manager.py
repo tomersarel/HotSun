@@ -5,8 +5,7 @@ from df_objects import DemandHourlyStateData, SolarRadiationHourly, SolarRadiati
     SolarProductionHourlyDataPVGIS
 import pandas as pd
 import period_strategy
-from df_objects import DemandHourlyStateData, SolarRadiationHourly
-from process_manager import ProcessManager
+from df_objects import DemandHourly, SolarRadiationHourly
 from period_strategy import PeriodStrategy
 from periodic_simulation import PeriodicSimulation
 from typing import Callable, List
@@ -17,15 +16,14 @@ from state import State
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'config.json')
 
 
-class Manager(ProcessManager):
+class Manager:
     """
     manages the activation of the periodic-simulation.
     saves the returned data.
     """
 
-
     def __init__(self,
-                 hourly_electricity_demand: DemandHourlyStateData,
+                 hourly_electricity_demand: DemandHourly,
                  objects_period_strategy: list[period_strategy.PeriodStrategy],
                  periodic_available_area: np.array,
                  hourly_solar_radiation: SolarRadiationHourly,
@@ -40,13 +38,17 @@ class Manager(ProcessManager):
         """
         super().__init__()
         self.config = config
+        time_string_format = self.config["TIME_FORMAT"]
+        self.periods_length_in_days = self.config["PERIODS_DAYS_AMOUNT"]
+        self.start_date = datetime.datetime.strptime(self.config["START_DATE"], time_string_format)
+        end_date = datetime.datetime.strptime(self.config["END_DATE"], time_string_format)
+        self.periods_amount = (end_date - self.start_date).days // self.periods_length_in_days
         self.hourly_electricity_demand = hourly_electricity_demand
         strategy = pd.DataFrame.from_dict(config["STRATEGY"])
         self.objects_period_strategy = [period_strategy.PeriodStrategy(row["solar_panel_purchased"], row["batteries_purchased"]) for index, row in strategy.iterrows()]
         self.periodic_available_area = periodic_available_area
         self.hourly_solar_radiation = hourly_solar_radiation
         self.daily_strategy = daily_strategy
-        # prepare data for the simulation
         self.current_state = State(self.start_date)
         logging.info(f"Manager was built successfully.")
 
@@ -73,7 +75,6 @@ class Manager(ProcessManager):
             output.append(simulation_output_data)
             set_progress((str(period_i + 1), str(self.periods_amount), "Running Simulation...", f"{round((period_i + 1) / self.periods_amount * 100)}%"))
 
-
         output = pd.concat(output)
         output.reset_index(inplace=True, drop=True)
         return output
@@ -98,3 +99,12 @@ class Manager(ProcessManager):
         simulation_output_data.to_csv(f'simulation output/period{period_i}.csv', index=False)
         logging.info(f"Manager: the data was saved successfully.")
 
+    def convert_period_index_to_dates(self, period_i: int) -> (datetime, datetime):
+        """
+        convert period index to the start date of the period and the end date of the period.
+        :param period_i: the index of the period
+        :return: the start date of the period and the end date of the period.
+        """
+        period_start_date = self.start_date + datetime.timedelta(days=self.periods_length_in_days) * period_i
+        period_end_date = self.start_date + datetime.timedelta(days=self.periods_length_in_days) * (period_i + 1)
+        return period_start_date, period_end_date

@@ -13,17 +13,20 @@ from collections import OrderedDict
 
 from config_manager import ConfigGetter
 from df_objects import HourlyPricesData, HourlyEmmision, HourlySimulationDataOfPeriod
-from process_manager import ProcessManager
 
 
-class PostProcessor(ProcessManager):
+class PostProcessor():
     DATA_TYPES_AMOUNT = 3
     PERIODIC_COST_INDEX = 0
     PERIODIC_PROFIT_INDEX = 1
     PERIODIC_POLLUTE_INDEX = 2
 
-    def __init__(self, simulation_output: pandas.DataFrame):
-        super().__init__()
+    def __init__(self, simulation_output: pandas.DataFrame, config):
+        time_string_format = config["TIME_FORMAT"]
+        self.periods_length_in_days = config["PERIODS_DAYS_AMOUNT"]
+        self.start_date = datetime.datetime.strptime(config["START_DATE"], time_string_format)
+        end_date = datetime.datetime.strptime(config["END_DATE"], time_string_format)
+        self.periods_amount = (end_date - self.start_date).days // self.periods_length_in_days
         self.simulation_output = simulation_output
         logging.info(f"PostProcessor was built successfully.")
 

@@ -9,7 +9,8 @@ sidebar = html.Div([html.H4("Control Panel", className="text-center"),
                     dbc.Button("Cancel", id="cancel", color="primary", style={"width": "45%"},
                                className="my-2 mx-2 text-center"),
                     html.Div(id="paramerts", className="my-2 mx-2"),
-                    dcc.Store(id="df_energy"), dcc.Store(id="df_finance")],
+                    dcc.Store(id="df_energy"), dcc.Store(id="df_finance"),
+                   dcc.Location(id="location")],
                    style={"height": "92vh", "width": "100%",
                           "overflow-y": "auto", "overflow-x": "hidden"}, id="sidebar", className="my-3")
 
