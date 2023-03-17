@@ -93,10 +93,14 @@ def get_screen(i, period, start, end, location, startegy):
     if i == 4:
         location = location.split("/")
         return html.Div([dbc.Row([dbc.Col(html.H2("Run the simulation"))]),
-                         dbc.Row([dbc.Col(html.Big(f"{start}-{end} for period of {period} days at {location[0]}/{location[1]} - {location[2]}"))]),
                          dbc.Row([dbc.Col(html.P("\n\n\n"))]),
-                         dbc.Row([dbc.Col(dbc.Button("Run", id="run1", href="/show-energy-dist"))]),
-                         dbc.Row([dbc.Col(startegy)])
+                         dbc.Row([dbc.Col(html.H4(html.I(className="bi bi-calendar3-range")), width=1), dbc.Col(f"{start} - {end}"),
+                                  dbc.Col(html.H4(html.I(className="bi bi-hourglass-split")), width=1), dbc.Col(f"{period} days")]),
+                         dbc.Row(
+                             [dbc.Col(html.H4(html.I(className="bi bi-geo-alt-fill")), width=1), dbc.Col(f"{location[2]}"),
+                              dbc.Col(html.H4(html.I(className="bi bi-pin-map-fill")), width=1), dbc.Col(f"{location[0]}/{location[1]}")]),
+                         dbc.Row([dbc.Col(html.P("\n\n\n"))]),
+                         dbc.Row([dbc.Col(dbc.Button("Run", id="run1", href="/show-energy-dist"))])
                          ],
                         style={"padding": "20px"})
 

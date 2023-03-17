@@ -11,7 +11,7 @@ logging.info("Start application")
 
 cache = diskcache.Cache("./cache")
 background_callback_manager = DiskcacheLongCallbackManager(cache)
-application = Dash("Hot Sun", use_pages=True, external_stylesheets=[dbc.themes.BOOTSTRAP],
+application = Dash("Hot Sun", use_pages=True, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP],
                    suppress_callback_exceptions=True, background_callback_manager=background_callback_manager)
 
 navbar = dbc.NavbarSimple(
