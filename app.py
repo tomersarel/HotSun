@@ -21,7 +21,7 @@ navbar = dbc.NavbarSimple(
         dbc.NavItem(dbc.NavLink("About Us", href="/about-us"))
     ],
     brand="Hot Sun",
-    brand_href="/home",
+    brand_href="/",
     color="primary",
     dark=True,
     style={"height": "8vh"}
