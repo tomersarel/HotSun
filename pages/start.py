@@ -88,7 +88,8 @@ def get_screen(i, period, start, end, location, startegy):
                              # Allow multiple files to be uploaded
                              multiple=False
                          ))]),
-                         dbc.Row([dbc.Col()])
+                         dbc.Row([dbc.Col()]),
+                         html.Div([dbc.Row([dcc.Graph('myFig'), dcc.Graph("myFig2")], id="graph-id", style={"display": "none"})])
                          ],
                         style={"padding": "20px"})
     if i == 4:
@@ -115,7 +116,7 @@ layout = html.Div([dbc.Card(
                                       dbc.Col(dbc.Button("Next", id="next", n_clicks=0, style=center), width=2)]),
                              dbc.Row(dbc.Col(html.Small("1/5", style=bottom, id="step_num"), width=2),
                                      justify="center")])])]
-    , style={"display": "block", "width": "60%", "height": "300px", "padding": "10px", "margin": "10% 20% 10% 20%"})
+    , style={"display": "block", "width": "60%","padding": "10px", "margin": "10% 20% 10% 20%"})
     , dcc.Store(id="city-lon-lat", storage_type='local', data=ConfigGetter['LOCATION'])
     , dcc.Store(id="date-start", storage_type='local',
                 data=datetime.datetime.strptime(ConfigGetter['START_DATE'], ConfigGetter['TIME_FORMAT']))
@@ -222,14 +223,23 @@ def update_output(n, length, start, end):
     Output('purchase-strategy', 'data'),
     Output('msg', 'children'),
     Output('msg', 'color'),
+    Output('myFig', 'figure'),
+    Output('myFig2', 'figure'),
+    Output('graph-id', 'style'),
     Input('upload-data', 'contents'),
     State('upload-data', 'filename'),
     State('purchase-strategy', 'data'),
-    State("date-start", "data"), State("date-end", "data"),
+    State("date-start", "data"), 
+    State("date-end", "data"),
     State('period-length', 'data')
 )
 def update_output(content, file_name, current, start, end, length):
     result = [None, None, None]
+    x = []
+    y = [[],[]]
+    fig = 0
+    fig2 = 0
+    style={"display":"none"}
     if content is not None:
         try:
             if file_name.split('.')[1] != 'csv':
@@ -245,14 +255,42 @@ def update_output(content, file_name, current, start, end, length):
                 raise Exception("Bad file format")
             result[1], result[2] = "Success!", "success"
             result[0] = df
+            x = df["period"]
+            y = [df["solar_panel_purchased"], df["batteries_purchased"]]
+            style["display"] = "block"
         except Exception as e:
             result[1], result[2] = str(e) + ". Try again!", "danger"
             result[0] = None
     else:
         result[1], result[2] = html.Div(['Drag and Drop or ', html.B('Select Files')]), "light"
 
+
+    fig = go.Figure(
+        data=[
+            {'x': x, 'y': y[0], 'type': 'bar'},
+        ],
+        layout = go.Layout(
+            plot_bgcolor="#fff",
+            paper_bgcolor="#fff",
+            xaxis={"title":"period"},
+            yaxis={"title":"solar_panel_purchased"}
+        )
+    )
+
+    fig2 = go.Figure(
+        data=[
+            {'x': x, 'y': y[1], 'type': 'bar'}
+        ],
+        layout=go.Layout(
+            plot_bgcolor="#FFF",
+            paper_bgcolor="#fff",
+            xaxis={"title":"period"},
+            yaxis={"title":"batteries_purchased"}
+        )
+    )
+
     if result[0] is None:
         period_amount = calculate_periods_amount(start, end, length)
         result[0] = pandas.DataFrame(data={'period': [i + 1 for i in range(period_amount)], 'solar_panel_purchased': [10000] * period_amount,
                   'batteries_purchased': [200] * period_amount})
-    return result[0][['solar_panel_purchased', 'batteries_purchased']].to_json(), result[1], result[2]
+    return result[0][['solar_panel_purchased', 'batteries_purchased']].to_json(), result[1], result[2], fig, fig2, style
