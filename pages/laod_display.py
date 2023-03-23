@@ -1,5 +1,6 @@
 from imports import *
 from df_objects import *
+import pandas as pdg
 
 
 energy_columns = ['Batteries', 'Solar', 'Buying', 'Selling', 'Lost', 'Storaged']
@@ -60,19 +61,62 @@ def dict_to_dataframe(df):
 
 
 def get_display(config, df_energy, df_finance):
-    display_summery = html.Div([html.Div([
-        dbc.Card([dbc.CardBody([
-            html.H1(f"-", className="card-title", style={"text-align": "center", "font-size": 48}),
-            html.H4(f"Parameter {i}", className="card-title", style={"text-align": "center"}),
-            html.P(
-                "description of the paramter",
-                className="card-text",
-            )])], style={"width": "18rem"}, className="mx-2 my-2") for i in range(8)
-    ], className="row"),
+    df_energy['Total'] = df_energy['Solar'] + df_energy['Buying'] + df_energy['Batteries']
+    df_PollutionRates = pdg.read_csv(r"data/PollutionRates.csv")
+    # Calculate solar percentage
+    total_electricity = df_energy['Total'].sum()
+    solar_electricity = df_energy['Solar'].sum()
+    solar_percentage = round((solar_electricity / total_electricity) * 100, 2)
+
+    # Calculate CO2 pollution saved
+    energy_saved = 2200 # replace with desired energy amount
+    co2_saved = round(energy_saved * 0.526, 2) # based on average CO2 emissions per kWh
+
+    # Calculate average PollutionRates
+    avg_pollution_rates = round(df_PollutionRates['Pollution'].mean(), 2)
+
+    display_summary = html.Div([
+        html.Div([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H1(f"{solar_percentage}%", className="card-title", style={"text-align": "center", "font-size": 48}),
+                    html.H4("Solar Energy", className="card-title", style={"text-align": "center"}),
+                    html.P(
+                        "Percentage of total electricity generated from solar energy.",
+                        className="card-text",
+                    )
+                ]),
+            ], style={"width": "18rem"}, className="mx-2 my-2"),
+            dbc.Card([
+                dbc.CardBody([
+                    html.H1(f"{co2_saved} kg", className="card-title", style={"text-align": "center", "font-size": 48}),
+                    html.H4("Pollution", className="card-title", style={"text-align": "center"}),
+                    html.P(
+                        "Amount of CO2 pollution saved by producing solar energy.",
+                        className="card-text",
+                    ),
+                    html.P(
+                        "Formula: (Energy produced in kWh) x 0.526 kg/kWh (average CO2 emissions per kWh)",
+                        className="card-text",
+                    )
+                ]),
+            ], style={"width": "18rem"}, className="mx-2 my-2"),
+            dbc.Card([
+                dbc.CardBody([
+                    html.H1(f"{avg_pollution_rates}", className="card-title", style={"text-align": "center", "font-size": 48}),
+                    html.H4("Pollution Rates", className="card-title", style={"text-align": "center"}),
+                    html.P(
+                        "Average PollutionRates for all rows in the table.",
+                        className="card-text",
+                    ),
+                ]),
+            ], style={"width": "18rem"}, className="mx-2 my-2"),
+        ], className="row"),
         dcc.Graph(figure=go.Figure(
             data=generate_year_enr_graph(config['START_YEAR'], config['END_YEAR'], dict_to_dataframe(df_energy), 'Y'),
             layout=go.Layout(barmode='stack', title=f"yearly energy distribution")))
     ])
+
     display_energy = html.Div([dcc.Slider(id="period_slider",
                                           min=config["START_YEAR"],
                                           max=config["END_YEAR"] - 1,
@@ -105,7 +149,7 @@ def get_display(config, df_energy, df_finance):
                                                 layout=go.Layout(barmode='stack', title=f"total pollution per period")),
                                             style={"height": "600px"})])
 
-    display = html.Div([dbc.Accordion([dbc.AccordionItem(display_summery, title='Summery'),
+    display = html.Div([dbc.Accordion([dbc.AccordionItem(display_summary, title='Summery'),
                                        dbc.AccordionItem(display_energy, title='Energy'),
                                        dbc.AccordionItem(display_finance, title='Finance'),
                                        dbc.AccordionItem(display_pollution, title='Pollution')],
