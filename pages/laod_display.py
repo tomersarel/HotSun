@@ -91,17 +91,18 @@ def get_display(config, df_energy, df_finance):
 
 
 
-def get_parameters(config):
+def get_parameters(config, n=0):
     result = []
     for i, (parameter, value) in enumerate(config.items()):
         if parameter not in ["START_YEAR", "END_YEAR", "PERIODS_DAYS_AMOUNT"]:
             parameter = parameter.replace("_", " ").lower().capitalize()
             if type(value) == int:
                 result.append(dbc.Row(
-                    [dbc.Col(f"{parameter}:", width="auto"), dbc.Col(dbc.Input(id={'type': 'config-input', 'index': i},value=f"{value}", type="number"))],
+                    [dbc.Col(f"{parameter}:", width="auto"), dbc.Col(dbc.Input(id={'type': 'config-input', 'index': i},
+                                                                               value=f"{value}", type="number"))],
                     className="my-2"))
             elif type(value) == dict:
                 result.append(dbc.Row(
-                    dbc.Accordion(dbc.AccordionItem(get_parameters(value), title=parameter), start_collapsed=True)))
+                    dbc.Accordion(dbc.AccordionItem(get_parameters(value, n+i), title=parameter), start_collapsed=True)))
     return result
 

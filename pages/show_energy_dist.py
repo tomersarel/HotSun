@@ -46,13 +46,12 @@ def update_daily_graph(clickData, df):
 
 
 @callback(
-    Output("config","data", allow_duplicate=True),
+    Output("config", "data", allow_duplicate=True),
     Input({'type': 'config-input', 'index': ALL}, 'value'),
-    State("config","data"),
+    State("config", "data"),
     prevent_initial_call='initial_duplicate'
 )
 def change_config(val,confi):
-    print("")
     trigger = ctx.triggered_id
     if trigger:
         print(val[trigger["index"]])
