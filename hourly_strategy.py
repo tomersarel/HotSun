@@ -46,7 +46,7 @@ class GreedyDailyStrategy(DailyStrategy):
                     to_supply -= discharged
                     batteries[hour] += discharged
                     battery_index += 1
-                    buying[hour] = to_supply
+                buying[hour] = to_supply
             state.current_date += datetime.timedelta(hours=1)
 
         new_batteries_energy = state.batteries[-1].capacity
@@ -95,3 +95,5 @@ def generic_hourly_strategy(state: State, demand: df_objects.DemandHourly, solar
                            'Lost': [1] * 24})
     state.current_date += datetime.timedelta(days=1)
     return result, state
+
+
