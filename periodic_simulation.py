@@ -15,9 +15,22 @@ class PeriodicSimulation:
         self.daily_simulator = daily_simulator
         self.result = pd.DataFrame(
             columns=['Date', 'Batteries', 'Solar', 'Buying', 'Selling', 'Lost', 'Storaged', "NewBatteries",
-                     "AllBatteries", "NewSolarPanels", "AllSolarPanels"])
+                     "AllBatteries", "NewSolarPanels", "AllSolarPanels", "Warning_is_full"])
+
         self.state.batteries.append(Battery(periodic_strategy.batteries, self.start_date, config))
         self.state.solar_panels.append(SolarPanel(periodic_strategy.solar_panels, config))
+
+
+    def is_full_charge(self):
+        capacity = 0
+        charge = 0
+        for battery in self.state.batteries:
+            capacity += battery.capacity
+            charge += battery.charge
+
+        return capacity/charge >= 95
+
+
     
     
     def start(self):
@@ -26,6 +39,8 @@ class PeriodicSimulation:
         for daily_demand, daily_solar_rad in zip(self.demand, self.solar_rad):
             day_result, self.state = self.daily_simulator(self.state, daily_demand, daily_solar_rad)
             self.result = pd.concat([self.result, day_result], ignore_index=True)
+
+        print (self.result)
 
     def get_result(self):
         return self.result, self.state

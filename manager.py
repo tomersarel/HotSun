@@ -24,7 +24,7 @@ class Manager:
 
     def __init__(self,
                  hourly_electricity_demand: DemandHourly,
-                 objects_period_strategy: list[period_strategy.PeriodStrategy],
+                 #objects_period_strategy: list[period_strategy.PeriodStrategy],
                  periodic_available_area: np.array,
                  hourly_solar_radiation: SolarRadiationHourly,
                  daily_strategy: Callable, config: dict):
