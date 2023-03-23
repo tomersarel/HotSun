@@ -25,7 +25,7 @@ layout = html.Div([html.Div(id="placeholder"), dbc.Row([dbc.Col(sidebar, width=3
     State("df_energy", "data")
 )
 def update_yearly_graph(value, df):
-    fig = go.Figure(data=generate_year_enr_graph(value, value + 1, dict_to_dataframe(df)),
+    fig = go.Figure(data=generate_year_enr_graph(value, value + 1, dict_to_dataframe(df), "D"),
                     layout=go.Layout(barmode='stack', title=f"{value} energy distribution"))
     fig.update_layout(bargap=0)
     return fig

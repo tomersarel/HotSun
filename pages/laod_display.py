@@ -7,27 +7,52 @@ colors = {"Solar": "#ffe205", "Batteries": "#d4d4d4", "Buying": "#ec4141", "Sell
           "Lost": "gray"}
 
 
-def generate_year_enr_graph(start_year, end_year, df, resample='D'):
-    data = df[(df['Date'] >= datetime.datetime(year=start_year, day=1, month=1)) & (
-            df['Date'] < datetime.datetime(year=end_year, day=1, month=1))]
-    data = data.resample(resample, on='Date', convention="start").sum()
+def generate_energy_graph_by_date_range(start, end, df, resample='H'):
+    """
+    generate energy graph by Datetime.Datetime range and resample it.
+    :param start: the start date
+    :param end: the end date
+    :param df: the energy df
+    :param resample: the resample type
+    :return: array of bars by different energy types
+    """
+    #df = df.set_index(['Date'])
+    data = df[(df.index >= start) & (df.index < end)]
+    if resample != 'H':
+        data = data.resample(resample, convention="start").sum()
     return [go.Bar(x=data.index, y=data[col], name=col, marker={'color': colors[col], 'line.width': 0}) for col in
             energy_columns]
 
 
+def generate_year_enr_graph(start_year, end_year, df, resample='Y'):
+    """
+    generate energy graph by year range and resample it
+    """
+    return generate_energy_graph_by_date_range(datetime.datetime(year=start_year, day=1, month=1),
+                                               datetime.datetime(year=end_year, day=1, month=1),
+                                               df, resample)
+
+
 def generate_day_enr_graph(date, df):
-    df = df[(df['Date'] >= date) & (df['Date'] < date + datetime.timedelta(days=1))]
-    df = df.set_index('Date')
-    return [go.Bar(x=df.index.hour, y=df[col], name=col, marker={'color': colors[col], 'line.width': 0}) for col in
-            energy_columns]
+    """
+        generate energy graph for single date by hour
+    """
+    return generate_energy_graph_by_date_range(date,
+                                               date + datetime.timedelta(days=1),
+                                               df, 'H')
 
 
 def dict_to_dataframe(df):
+    """
+    this function create data frame from dict
+    :param df: the given dict
+    :return: pandas data frame
+    """
     df = pd.DataFrame(df)
     if df.empty:
         return df
     df['Date'] = pd.to_datetime(df['Date'], dayfirst=True)
-    df.set_index('Date')
+    df = df.set_index('Date')
     for coloumn in df.columns:
         if coloumn in energy_columns:
             df[coloumn] = pd.to_numeric(df[coloumn])
