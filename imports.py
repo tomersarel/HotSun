@@ -9,7 +9,7 @@ from config_manager import ConfigGetter
 from matplotlib import pyplot as plt
 import plotly
 import plotly.graph_objects as go
-from dash import Dash, html, dcc, Input, Output, State, callback, DiskcacheManager, long_callback, MATCH
+from dash import Dash, html, dcc, Input, Output, State, callback, DiskcacheManager, long_callback, MATCH, ALL, ctx
 import dash
 from dash.long_callback import DiskcacheLongCallbackManager
 import dash_bootstrap_components as dbc
