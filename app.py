@@ -22,12 +22,23 @@ navbar = dbc.NavbarSimple(
     ],
     brand="Hot Sun",
     brand_href="/",
-    color="primary",
+    color="transparent",
     dark=True,
     style={"height": "8vh"}
 )
 
-application.layout = html.Div([navbar,
+application.layout = html.Div([dbc.Carousel(
+                                items=[
+                                    {"key" : "1", "src" : "/assets/back1.jpg"},
+                                    {"key" : "2", "src" : "/assets/back2.jpg"}
+                                ],
+                                controls=False,
+                                indicators=False,
+                                interval=1500,
+                                ride="carousel",
+                                style={"z-index": "-1", "overflow": "hidden", "position": "absolute", "display" : "block"}
+                            ),
+                            navbar,
                             dash.page_container,
                                html.Div([html.Div([html.H3("Loading...", id="loading-label"),
                                                    dbc.Progress(id="progress_bar",
