@@ -7,6 +7,7 @@ import pandas
 import base64
 from dash import dash_table
 from datetime import datetime
+from dash.exceptions import PreventUpdate
 
 from imports import *
 
@@ -58,7 +59,7 @@ def get_screen(i, period, start, end, location, startegy):
                                            step=1, value=period),
                                  dbc.InputGroupText("days", id="units")
                              ]
-                         ))])],
+                             ))])],
                         style={"padding": "20px"})
     if i == 3:
         return html.Div([dbc.Row([dbc.Col(html.H2("Enter purchase strategy"))]),
@@ -179,7 +180,7 @@ def select_unit(n1, n2, n3, length, prev):
         return ConfigGetter["PERIODS_DAYS_AMOUNT"], prev
     DAYS = {"years": 365, "months": 30, "days": 1}
     ctx = dash.callback_context
-    if not ctx.triggered:
+    if not ctx.triggered or "input" in ctx.triggered[0]["prop_id"]:
         chosen = prev
     else:
         chosen = ctx.triggered[0]["prop_id"].split(".")[0]
