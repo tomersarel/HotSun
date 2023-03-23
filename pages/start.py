@@ -7,6 +7,7 @@ import pandas
 import base64
 from dash import dash_table
 from datetime import datetime
+from dash.exceptions import PreventUpdate
 
 from imports import *
 
@@ -64,41 +65,43 @@ def get_screen(i, period, start, end, location, startegy):
         return html.Div([dbc.Row([dbc.Col(html.H2("Enter purchase strategy"))]),
                          dbc.Row([dbc.Col([html.Big("description of this paramter like thie like")])]),
                          dbc.Row([dbc.Col(html.H1(" "))]),
-                         dbc.Row([dbc.Col([dbc.Button(children="Download Template", id="download", color="secondary"),
-                                           dcc.Download(id="download-template")])]),
-                         dbc.Row([dbc.Col(html.H1(" "))]),
-                         dbc.Row([dbc.Col(dcc.Upload(
+                         dbc.Row(dbc.Row([dbc.Col([dbc.Button(children="Download Template", id="download", color="secondary"),
+                                           dcc.Download(id="download-template")], width=3), dbc.Col(dcc.Upload(
                              id='upload-data',
-                             children=
-                             dbc.Alert(html.Div(['Drag and Drop or ',
-                                                 html.B('Select Files')],
-                                                style={"height": "100%", "vertical-align": "center"}), id="msg",
-                                       color="light")  # , )
+                             children=html.Div(
+                                 dbc.Alert(html.Div(['Drag and Drop or ',
+                                                     html.B('Select Files')],
+                                                    style={"vertical-align": "center"}), id="msg",
+                                           color="light"), style={"height": "100%"})
                              ,
                              style={
                                  'width': '100%',
-                                 'height': '60px',
+                                 'height': '10px',
                                  'lineHeight': '60px',
                                  'borderWidth': '1px',
                                  'borderStyle': 'dashed',
                                  'borderRadius': '5px',
                                  'textAlign': 'center',
                              },
-                             # Allow multiple files to be uploaded
                              multiple=False
-                         ))]),
-                         dbc.Row([dbc.Col()])
+                         ))])),
+                         dbc.Row(dbc.Row([dbc.Col(dcc.Graph('myFig'), width=6), dbc.Col(dcc.Graph('myFig2'), width=6)]),
+                                 style={"display": "none"}, id="graph-id"),
                          ],
                         style={"padding": "20px"})
     if i == 4:
         location = location.split("/")
         return html.Div([dbc.Row([dbc.Col(html.H2("Run the simulation"))]),
                          dbc.Row([dbc.Col(html.P("\n\n\n"))]),
-                         dbc.Row([dbc.Col(html.H4(html.I(className="bi bi-calendar3-range")), width=1), dbc.Col(f"{start} - {end}"),
-                                  dbc.Col(html.H4(html.I(className="bi bi-hourglass-split")), width=1), dbc.Col(f"{period} days")]),
+                         dbc.Row([dbc.Col(html.H4(html.I(className="bi bi-calendar3-range")), width=1),
+                                  dbc.Col(f"{start} - {end}"),
+                                  dbc.Col(html.H4(html.I(className="bi bi-hourglass-split")), width=1),
+                                  dbc.Col(f"{period} days")]),
                          dbc.Row(
-                             [dbc.Col(html.H4(html.I(className="bi bi-geo-alt-fill")), width=1), dbc.Col(f"{location[2]}"),
-                              dbc.Col(html.H4(html.I(className="bi bi-pin-map-fill")), width=1), dbc.Col(f"{location[0]}/{location[1]}")]),
+                             [dbc.Col(html.H4(html.I(className="bi bi-geo-alt-fill")), width=1),
+                              dbc.Col(f"{location[2]}"),
+                              dbc.Col(html.H4(html.I(className="bi bi-pin-map-fill")), width=1),
+                              dbc.Col(f"{location[0]}/{location[1]}")]),
                          dbc.Row([dbc.Col(html.P("\n\n\n"))]),
                          dbc.Row([dbc.Col(dbc.Button("Run", id="run1", href="/show-energy-dist"))])
                          ],
@@ -114,7 +117,7 @@ layout = html.Div([dbc.Card(
                                       dbc.Col(dbc.Button("Next", id="next", n_clicks=0, style=center), width=2)]),
                              dbc.Row(dbc.Col(html.Small("1/5", style=bottom, id="step_num"), width=2),
                                      justify="center")])])]
-    , style={"display": "block", "width": "60%", "height": "300px", "padding": "10px", "margin": "10% 20% 10% 20%"})
+    , style={"display": "block", "width": "80%", "padding": "10px", "margin": "5% 10% 10% 10%"})
     , dcc.Store(id="city-lon-lat", storage_type='local', data=ConfigGetter['LOCATION'])
     , dcc.Store(id="date-start", storage_type='local',
                 data=datetime.datetime.strptime(ConfigGetter['START_DATE'], ConfigGetter['TIME_FORMAT']))
@@ -179,7 +182,7 @@ def select_unit(n1, n2, n3, length, prev):
         return ConfigGetter["PERIODS_DAYS_AMOUNT"], prev
     DAYS = {"years": 365, "months": 30, "days": 1}
     ctx = dash.callback_context
-    if not ctx.triggered:
+    if not ctx.triggered or "input" in ctx.triggered[0]["prop_id"]:
         chosen = prev
     else:
         chosen = ctx.triggered[0]["prop_id"].split(".")[0]
@@ -212,7 +215,8 @@ def update_output(value):
 )
 def update_output(n, length, start, end):
     period_amount = calculate_periods_amount(start, end, length)
-    df = {'period': [i + 1 for i in range(period_amount)], 'solar_panel_purchased': [0] * period_amount, 'batteries_purchased': [0] * period_amount}
+    df = {'period': [i + 1 for i in range(period_amount)], 'solar_panel_purchased': [0] * period_amount,
+          'batteries_purchased': [0] * period_amount}
     df = pandas.DataFrame(data=df)
     return dcc.send_data_frame(df.to_csv, "template.csv", index=False)
 
@@ -221,14 +225,23 @@ def update_output(n, length, start, end):
     Output('purchase-strategy', 'data'),
     Output('msg', 'children'),
     Output('msg', 'color'),
+    Output('myFig', 'figure'),
+    Output('myFig2', 'figure'),
+    Output('graph-id', 'style'),
     Input('upload-data', 'contents'),
     State('upload-data', 'filename'),
     State('purchase-strategy', 'data'),
-    State("date-start", "data"), State("date-end", "data"),
+    State("date-start", "data"),
+    State("date-end", "data"),
     State('period-length', 'data')
 )
 def update_output(content, file_name, current, start, end, length):
     result = [None, None, None]
+    x = []
+    y = [[], []]
+    fig = 0
+    fig2 = 0
+    style = {"display": "none", "top": "60%"}
     if content is not None:
         try:
             if file_name.split('.')[1] != 'csv':
@@ -237,21 +250,50 @@ def update_output(content, file_name, current, start, end, length):
             decoded = base64.b64decode(content_string)
             df = pd.read_csv(io.BytesIO(decoded), header=[0])
             if len(df.columns) != 3 \
-                    or not numpy.array_equal(df.columns.to_numpy(), numpy.array(['period', 'solar_panel_purchased', 'batteries_purchased']))\
-                    or df.count()[0] != calculate_periods_amount(start, end, length)\
-                    or not all(str(x).isnumeric() and float(x).is_integer() for x in df['solar_panel_purchased'])\
+                    or not numpy.array_equal(df.columns.to_numpy(),
+                                             numpy.array(['period', 'solar_panel_purchased', 'batteries_purchased'])) \
+                    or df.count()[0] != calculate_periods_amount(start, end, length) \
+                    or not all(str(x).isnumeric() and float(x).is_integer() for x in df['solar_panel_purchased']) \
                     or not all(str(x).isnumeric() and float(x).is_integer() for x in df['batteries_purchased']):
                 raise Exception("Bad file format")
             result[1], result[2] = "Success!", "success"
             result[0] = df
+            x = df["period"]
+            y = [df["solar_panel_purchased"], df["batteries_purchased"]]
+            style["display"] = "block"
         except Exception as e:
             result[1], result[2] = str(e) + ". Try again!", "danger"
             result[0] = None
     else:
         result[1], result[2] = html.Div(['Drag and Drop or ', html.B('Select Files')]), "light"
 
+    fig = go.Figure(
+        data=[
+            {'x': x, 'y': y[0], 'type': 'bar'},
+        ],
+        layout=go.Layout(
+            plot_bgcolor="#fff",
+            paper_bgcolor="#fff",
+            xaxis={"title": "period"},
+            yaxis={"title": "solar_panel_purchased"}
+        )
+    )
+
+    fig2 = go.Figure(
+        data=[
+            {'x': x, 'y': y[1], 'type': 'bar'}
+        ],
+        layout=go.Layout(
+            plot_bgcolor="#FFF",
+            paper_bgcolor="#fff",
+            xaxis={"title": "period"},
+            yaxis={"title": "batteries_purchased"}
+        )
+    )
+
     if result[0] is None:
         period_amount = calculate_periods_amount(start, end, length)
-        result[0] = pandas.DataFrame(data={'period': [i + 1 for i in range(period_amount)], 'solar_panel_purchased': [10000] * period_amount,
+        result[0] = pandas.DataFrame(
+            data={'period': [i + 1 for i in range(period_amount)], 'solar_panel_purchased': [10000] * period_amount,
                   'batteries_purchased': [200] * period_amount})
-    return result[0][['solar_panel_purchased', 'batteries_purchased']].to_json(), result[1], result[2]
+    return result[0][['solar_panel_purchased', 'batteries_purchased']].to_json(), result[1], result[2], fig, fig2, style
