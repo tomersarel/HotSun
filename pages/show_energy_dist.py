@@ -43,3 +43,16 @@ def update_daily_graph(clickData, df):
     return go.Figure(data=generate_day_enr_graph(date, dict_to_dataframe(df)),
                      layout=go.Layout(barmode='stack', title=f"{date.strftime('%d/%m/%Y')} energy distribution")), {
                "display": "block"}
+
+
+@callback(
+    Output("config", "data", allow_duplicate=True),
+    Input({'type': 'config-input', 'index': ALL}, 'value'),
+    State("config", "data"),
+    prevent_initial_call='initial_duplicate'
+)
+def change_config(val,confi):
+    trigger = ctx.triggered_id
+    if trigger:
+        print(val[trigger["index"]])
+    return confi

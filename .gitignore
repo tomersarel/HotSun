@@ -133,3 +133,5 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+/cache/
+data/solar_radiation_hourly_long30_lat30_peak0.26_loss2.csv
