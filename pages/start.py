@@ -76,7 +76,7 @@ def get_screen(i, period, start, end, location, startegy):
                              ,
                              style={
                                  'width': '100%',
-                                 'height': '10px',
+                                 'height': '94px',
                                  'lineHeight': '60px',
                                  'borderWidth': '1px',
                                  'borderStyle': 'dashed',
@@ -241,7 +241,7 @@ def update_output(content, file_name, current, start, end, length):
     y = [[], []]
     fig = 0
     fig2 = 0
-    style = {"display": "none", "top": "60%"}
+    style = {"display": "none"}
     if content is not None:
         try:
             if file_name.split('.')[1] != 'csv':
