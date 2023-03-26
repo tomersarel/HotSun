@@ -35,6 +35,6 @@ def hotel_demand(amount,amount_growth,demand_growth,demand,date):
 def businesses_demand(amount,amount_growth,demand_growth,demand,date):
     return amount * math.pow(amount_growth, date[0] - 2021) \
            * math.pow(demand_growth, date[0] - 2021) * demand
-def factors_demand(amount,amount_growth,demand_growth,demand,date):
+def factories_demand(amount,amount_growth,demand_growth,demand,date):
     return amount * math.pow(amount_growth, date[0] - 2021) \
            * math.pow(demand_growth, date[0] - 2021) * demand
