@@ -54,5 +54,5 @@ def update_daily_graph(clickData, df):
 def change_config(val,confi):
     trigger = ctx.triggered_id
     if trigger:
-        print(val[trigger["index"]])
+        print(val[trigger["index"]], trigger["index"])
     return confi

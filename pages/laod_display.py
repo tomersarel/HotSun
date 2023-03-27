@@ -1,3 +1,5 @@
+import itertools
+
 from imports import *
 from df_objects import *
 import pandas as pdg
@@ -160,18 +162,18 @@ def get_display(config, df_energy, df_finance):
 
 
 
-def get_parameters(config, n=0):
+def get_parameters(config, id=itertools.count()):
     result = []
     for i, (parameter, value) in enumerate(config.items()):
         if parameter not in ["START_YEAR", "END_YEAR", "PERIODS_DAYS_AMOUNT"]:
             parameter = parameter.replace("_", " ").lower().capitalize()
-            if type(value) == int:
+            if type(value) in {int, float}:
                 result.append(dbc.Row(
-                    [dbc.Col(f"{parameter}:", width="auto"), dbc.Col(dbc.InputGroup([dbc.Input(id={'type': 'config-input', 'index': i},
+                    [dbc.Col(f"{parameter}:", width="auto"), dbc.Col(dbc.InputGroup([dbc.Input(id={'type': 'config-input', 'index': id.__next__()},
                                                                                value=f"{value}", type="number"), dbc.InputGroupText("kg", id="units")
                                                                                      ]))],
                     className="my-2"))
             elif type(value) == dict:
                 result.append(dbc.Row(
-                    dbc.Accordion(dbc.AccordionItem(get_parameters(value, n+i), title=parameter), start_collapsed=True)))
+                    dbc.Accordion(dbc.AccordionItem(get_parameters(value, id), title=parameter), start_collapsed=True)))
     return result
