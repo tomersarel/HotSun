@@ -28,27 +28,28 @@ navbar = dbc.NavbarSimple(
 )
 
 application.layout = html.Div([dbc.Carousel(
-                                items=[
-                                    {"key" : "1", "src" : "/assets/back1.jpg"},
-                                    {"key" : "2", "src" : "/assets/back2.jpg"}
-                                ],
-                                controls=False,
-                                indicators=False,
-                                interval=1500,
-                                ride="carousel",
-                                style={"z-index": "-1", "overflow": "hidden", "position": "absolute", "display" : "block"}
-                            ),
-                            navbar,
-                            dash.page_container,
-                               html.Div([html.Div([html.H3("Loading...", id="loading-label"),
-                                                   dbc.Progress(id="progress_bar",
-                                                                style={'width': '300px', 'height': '20px'})],
-                                                  style={"position": "absolute", "left": "50%", "top": "50%",
-                                                         "margin-top": "-50px",
-                                                         "margin-left": "-150px"})],
-                                        id="loading", style={"display": "none"}, className="text-center"),
-                               dcc.Store(id="config", storage_type="memory", data=json.load(open("config.json")))
-                               ], style={"overflow": "hidden"})
+    items=[
+        {"key": "1", "src": "/assets/back1.jpg"},
+        {"key": "2", "src": "/assets/back2.jpg"}
+    ],
+    controls=False,
+    indicators=False,
+    interval=1500,
+    ride="carousel",
+    className="carousel-fade",
+    style={"z-index": "-1", "overflow": "hidden", "position": "absolute", "display": "block"}
+),
+    navbar,
+    dash.page_container,
+    html.Div([html.Div([html.H3("Loading...", id="loading-label"),
+                        dbc.Progress(id="progress_bar",
+                                     style={'width': '300px', 'height': '20px'})],
+                       style={"position": "absolute", "left": "50%", "top": "50%",
+                              "margin-top": "-50px",
+                              "margin-left": "-150px"})],
+             id="loading", style={"display": "none"}, className="text-center"),
+    dcc.Store(id="config", storage_type="memory", data=json.load(open("config.json")))
+], style={"overflow": "hidden"})
 ConfigGetter.load_data()
 
 
