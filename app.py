@@ -50,7 +50,7 @@ application.layout = html.Div([dbc.Carousel(
                               "margin-left": "-150px"})],
              id="loading", style={"display": "none"}, className="text-center"),
     dcc.Store(id="config", storage_type="memory", data=json.load(open("config.json")))
-], style={"overflow": "hidden"})
+], style={"overflow": "hidden", "height": "100vh"})
 ConfigGetter.load_data()
 
 
@@ -68,7 +68,7 @@ ConfigGetter.load_data()
         (Output("loading", "style"), {"display": 'block', 'position': 'absolute',
                                       'top': '8%', 'left': '25%',
                                       'text-align': "center", 'width': "75%", "height": "92%",
-                                      "background": "rgba(255,255,255,0.8)", "background-size": "cover"}
+                                      "background": "rgba(255,255,255,0)", "background-size": "cover"}
          , {"display": "none"})
     ],
     cancel=[Input("cancel", "n_clicks"), Input("location", "href")],
