@@ -76,7 +76,7 @@ def get_screen(i, period, start, end, location, startegy):
                              ,
                              style={
                                  'width': '100%',
-                                 'height': '94px',
+                                 'height': '96px',
                                  'lineHeight': '60px',
                                  'borderWidth': '1px',
                                  'borderStyle': 'dashed',

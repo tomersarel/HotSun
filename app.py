@@ -38,7 +38,7 @@ application.layout = html.Div([dbc.Carousel(
     interval=1500,
     ride="carousel",
     className="carousel-fade",
-    style={"z-index": "-1", "overflow": "hidden", "position": "absolute", "display": "block"}
+    style={"z-index": "-1", "overflow": "hidden", "position": "absolute", "display": "block", "max-width" : "100%", "max-height" : "100%", "margin" : "auto", "padding" : "auto", "height" : "10000px", "width" : "10000px"}
 ),
     navbar,
     dash.page_container,
