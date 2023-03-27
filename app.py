@@ -29,8 +29,9 @@ navbar = dbc.NavbarSimple(
 
 application.layout = html.Div([dbc.Carousel(
     items=[
-        {"key": "1", "src": "/assets/back1.jpg"},
-        {"key": "2", "src": "/assets/back2.jpg"}
+        {"key": "1", "src": "/assets/back3.jpg"},
+        {"key": "2", "src": "/assets/back4.jpg"},
+        {"key": "3", "src": "/assets/back4.jpeg"}
     ],
     controls=False,
     indicators=False,
