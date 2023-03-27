@@ -163,7 +163,7 @@ def get_display(config, df_energy, df_finance):
 def get_parameters(config, n=0):
     result = []
     for i, (parameter, value) in enumerate(config.items()):
-        if parameter not in ["START_YEAR", "END_YEAR", "PERIODS_DAYS_AMOUNT"]:
+        if parameter not in ["START_YEAR", "END_YEAR", "PERIODS_DAYS_AMOUNT", "LOCATION"]:
             parameter = parameter.replace("_", " ").lower().capitalize()
             if type(value) == int:
                 result.append(dbc.Row(
