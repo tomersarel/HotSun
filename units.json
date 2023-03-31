@@ -1,0 +1,26 @@
+{
+  "battery":
+  {
+    "capacity": "lg",
+    "lifetime": "mg",
+    "charge_rate": "sk",
+    "efficiency": "cv",
+    "decay_rate": "al"
+  },
+  "solar":
+  {
+    "lifetime": "kg",
+    "efficiency": "kg",
+    "decay_rate": "kg",
+    "area": "kg",
+    "max_power": "kg",
+    "peakpower": "kg",
+    "loss": "kg"
+  },
+  "STRATEGY":
+  {
+    "solar_panel_purchased":{"0":"kg","1":"kg","2":"kg","3":"kg","4":"kg","5":"kg","6":"kg","7":"kg","8":"kg","9":"kg","10":"kg","11":"kg","12":"kg","13":"kg","14":"kg","15":"kg","16":"kg","17":"kg","18":"kg","19":"kg","20":"kg","21":"kg","22":"kg","23":"kg","24":"kg","25":"kg","26":"kg","27":"kg","28":"kg","29":"kg","30":"kg","31":"kg","32":"kg"},
+    "batteries_purchased":{"0":"kg","1":"kg","2":"kg","3":"kg","4": "kg","5": "kg","6": "kg","7": "kg","8": "kg","9": "kg","10": "kg","11": "kg","12": "kg","13": "kg","14": "kg","15": "kg","16": "kg","17": "kg","18": "kg","19": "kg","20": "kg","21": "kg","22": "kg","23": "kg","24": "kg","25": "kg","26": "kg","27": "kg","28": "kg","29": "kg","30": "kg","31": "kg","32": "kg"}
+  }
+
+}
