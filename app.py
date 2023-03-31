@@ -22,24 +22,36 @@ navbar = dbc.NavbarSimple(
     ],
     brand="Hot Sun",
     brand_href="/",
-    color="primary",
+    color="transparent",
     dark=True,
     style={"height": "8vh"}
 )
 
+application.layout = html.Div([dbc.Carousel(
+    items=[
+        {"key": "1", "src": "/assets/back3.jpg"},
+        {"key": "2", "src": "/assets/back4.jpg"},
+        {"key": "3", "src": "/assets/back4.jpeg"}
+    ],
+    controls=False,
+    indicators=False,
+    interval=1500,
+    ride="carousel",
+    className="carousel-fade",
+    style={"z-index": "-1", "overflow": "hidden", "position": "absolute", "display": "block", "max-width" : "100%", "max-height" : "100%", "margin" : "auto", "padding" : "auto", "height" : "10000px", "width" : "10000px"}
+),
+    navbar,
+    dash.page_container,
+    html.Div([html.Div([html.H3("Loading...", id="loading-label"),
+                        dbc.Progress(id="progress_bar",
+                                     style={'width': '300px', 'height': '20px'})],
+                       style={"position": "absolute", "left": "50%", "top": "50%",
+                              "margin-top": "-50px",
+                              "margin-left": "-150px"})],
+             id="loading", style={"display": "none"}, className="text-center"),
+    dcc.Store(id="config", storage_type="session", data=json.load(open("config.json")))
+], style={"overflow": "hidden", "height": "100vh"})
 ConfigGetter.load_data()
-application.layout = html.Div([navbar,
-                               dash.page_container,
-                               html.Div([html.Div([html.H3("Loading...", id="loading-label"),
-                                                   dbc.Progress(id="progress_bar",
-                                                                style={'width': '300px', 'height': '20px'})],
-                                                  style={"position": "absolute", "left": "50%", "top": "50%",
-                                                         "margin-top": "-50px",
-                                                         "margin-left": "-150px"}),
-                                         ],
-                                        id="loading", style={"display": "none"}, className="text-center"),
-                               dcc.Store(id="config", storage_type="session", data=json.load(open("config.json")))
-                               ], style={"overflow": "hidden"})
 
 
 @application.long_callback(
@@ -56,7 +68,7 @@ application.layout = html.Div([navbar,
         (Output("loading", "style"), {"display": 'block', 'position': 'absolute',
                                       'top': '8%', 'left': '25%',
                                       'text-align': "center", 'width': "75%", "height": "92%",
-                                      "background": "rgba(255,255,255,0.8)", "background-size": "cover"}
+                                      "background": "rgba(255,255,255,0)", "background-size": "cover"}
          , {"display": "none"})
     ],
     cancel=[Input("cancel", "n_clicks"), Input("location", "href")],
