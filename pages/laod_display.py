@@ -177,7 +177,7 @@ def create_list(units_dict, values):
 
 def get_parameters(config, units, id=itertools.count(), id2=itertools.count(), loc=""):
     result = []
-
+    
     for parameter, value in config.items():
         if parameter not in ["START_YEAR", "END_YEAR", "PERIODS_DAYS_AMOUNT", "LOCATION"]:
             parameter_name = parameter.replace("_", " ").lower().capitalize()
