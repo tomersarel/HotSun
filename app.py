@@ -5,7 +5,7 @@ from df_objects import *
 from manager import Manager
 import hourly_strategy
 from post_processor import PostProcessor
-from pages.laod_display import get_parameters, get_display
+from pages.laod_display import get_parameter_wrapper, get_display
 
 logging.info("Start application")
 
@@ -27,18 +27,19 @@ navbar = dbc.NavbarSimple(
     style={"height": "8vh"}
 )
 
+ConfigGetter.load_data()
 application.layout = html.Div([navbar,
-                            dash.page_container,
+                               dash.page_container,
                                html.Div([html.Div([html.H3("Loading...", id="loading-label"),
                                                    dbc.Progress(id="progress_bar",
                                                                 style={'width': '300px', 'height': '20px'})],
                                                   style={"position": "absolute", "left": "50%", "top": "50%",
                                                          "margin-top": "-50px",
-                                                         "margin-left": "-150px"})],
+                                                         "margin-left": "-150px"}),
+                                         ],
                                         id="loading", style={"display": "none"}, className="text-center"),
-                               dcc.Store(id="config", storage_type="memory", data=json.load(open("config.json")))
+                               dcc.Store(id="config", storage_type="session", data=json.load(open("config.json")))
                                ], style={"overflow": "hidden"})
-ConfigGetter.load_data()
 
 
 @application.long_callback(
@@ -64,6 +65,7 @@ ConfigGetter.load_data()
     prevent_intial_call=True
 )
 def func(set_progress, n, config):
+    print(config)
     print("start")
     logging.info("Preprocess - Uploading files")
     set_progress(("0", "1", "Gathering Data...", "100%"))
@@ -92,7 +94,8 @@ def func(set_progress, n, config):
     logging.info("Postprocess - Start computing results")
 
     set_progress(("1", "1", "Displaying results...", "100%"))
-    return get_parameters(config), output_energy.to_dict('records'), output_post_processor.to_dict('records'), \
+
+    return get_parameter_wrapper(config), output_energy.to_dict('records'), output_post_processor.to_dict('records'), \
            get_display(config, output_energy, output_post_processor)
 
 
