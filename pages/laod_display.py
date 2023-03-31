@@ -1,7 +1,8 @@
+import itertools
+
 from imports import *
 from df_objects import *
 import pandas as pdg
-
 
 energy_columns = ['Batteries', 'Solar', 'Buying', 'Selling', 'Lost', 'Storaged']
 colors = {"Solar": "#ffe205", "Batteries": "#d4d4d4", "Buying": "#ec4141", "Selling": "#5fbb4e", "Storaged": "#9edbf9",
@@ -17,7 +18,7 @@ def generate_energy_graph_by_date_range(start, end, df, resample='H'):
     :param resample: the resample type
     :return: array of bars by different energy types
     """
-    #df = df.set_index(['Date'])
+    # df = df.set_index(['Date'])
     data = df[(df.index >= start) & (df.index < end)]
     if resample != 'H':
         data = data.resample(resample, convention="start").sum()
@@ -69,8 +70,8 @@ def get_display(config, df_energy, df_finance):
     solar_percentage = round((solar_electricity / total_electricity) * 100, 2)
 
     # Calculate CO2 pollution saved
-    energy_saved = 2200 # replace with desired energy amount
-    co2_saved = round(energy_saved * 0.526, 2) # based on average CO2 emissions per kWh
+    energy_saved = 2200  # replace with desired energy amount
+    co2_saved = round(energy_saved * 0.526, 2)  # based on average CO2 emissions per kWh
 
     # Calculate average PollutionRates
     avg_pollution_rates = round(df_PollutionRates['Pollution'].mean(), 2)
@@ -79,7 +80,8 @@ def get_display(config, df_energy, df_finance):
         html.Div([
             dbc.Card([
                 dbc.CardBody([
-                    html.H1(f"{solar_percentage}%", className="card-title", style={"text-align": "center", "font-size": 48}),
+                    html.H1(f"{solar_percentage}%", className="card-title",
+                            style={"text-align": "center", "font-size": 48}),
                     html.H4("Solar Energy", className="card-title", style={"text-align": "center"}),
                     html.P(
                         "Percentage of total electricity generated from solar energy.",
@@ -103,7 +105,8 @@ def get_display(config, df_energy, df_finance):
             ], style={"width": "18rem"}, className="mx-2 my-2"),
             dbc.Card([
                 dbc.CardBody([
-                    html.H1(f"{avg_pollution_rates}", className="card-title", style={"text-align": "center", "font-size": 48}),
+                    html.H1(f"{avg_pollution_rates}", className="card-title",
+                            style={"text-align": "center", "font-size": 48}),
                     html.H4("Pollution Rates", className="card-title", style={"text-align": "center"}),
                     html.P(
                         "Average PollutionRates for all rows in the table.",
@@ -159,19 +162,51 @@ def get_display(config, df_energy, df_finance):
     return display
 
 
+def create_list(units_dict, values):
+    """
+    Create a list of all the values by order from recursive dict
+    """
+    for key, val in units_dict.items():
+        if isinstance(val, dict):
+            values = create_list(val, values)
+        else:
+            values.append(val)
 
-def get_parameters(config, n=0):
+    return values
+
+
+def get_parameters(config, units, id=itertools.count(), id2=itertools.count(), loc=""):
     result = []
-    for i, (parameter, value) in enumerate(config.items()):
+    
+    for parameter, value in config.items():
         if parameter not in ["START_YEAR", "END_YEAR", "PERIODS_DAYS_AMOUNT", "LOCATION"]:
-            parameter = parameter.replace("_", " ").lower().capitalize()
-            if type(value) == int:
+            parameter_name = parameter.replace("_", " ").lower().capitalize()
+            if type(value) in {int, float}:
                 result.append(dbc.Row(
-                    [dbc.Col(f"{parameter}:", width="auto"), dbc.Col(dbc.InputGroup([dbc.Input(id={'type': 'config-input', 'index': i},
-                                                                               value=f"{value}", type="number"), dbc.InputGroupText("kg", id="units")
-                                                                                     ]))],
-                    className="my-2"))
+                    [dbc.Col([f"{parameter_name}:",
+                              html.Div(f"{loc}-{parameter}",
+                                       id={'type': 'config-parameter', 'index': id2.__next__()})],
+                             width="auto"),
+                     dbc.Col(dbc.InputGroup([dbc.Input(
+                         id={'type': 'config-input', 'index': id.__next__()},
+                         value=f"{value}",
+                         type="number"),
+                         dbc.InputGroupText(
+                             f"{units.pop(0)}")
+                     ]))],
+                    className="my-2"
+                ))
             elif type(value) == dict:
                 result.append(dbc.Row(
-                    dbc.Accordion(dbc.AccordionItem(get_parameters(value, n+i), title=parameter), start_collapsed=True)))
+                    dbc.Accordion(dbc.AccordionItem(get_parameters(value, units, id, id2, f"{loc}-{parameter}"), title=parameter_name),
+                                  start_collapsed=True)
+                ))
+
     return result
+
+
+def get_parameter_wrapper(config):
+    with open(ConfigGetter.units_path) as f:
+        units_data = json.load(f)
+    units = create_list(units_data, [])
+    return get_parameters(config, units)
