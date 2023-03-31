@@ -5,6 +5,7 @@ import os
 
 class ConfigGetter:
     json_path = os.path.join(os.path.dirname(__file__), 'config.json')
+    units_path = os.path.join(os.path.dirname(__file__),'units.json')
     config_data_dict = {}
 
     @classmethod
@@ -18,3 +19,5 @@ class ConfigGetter:
     @classmethod
     def __class_getitem__(cls, item):
         return cls.config_data_dict[item]
+    
+  

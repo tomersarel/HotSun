@@ -160,20 +160,47 @@ def get_display(config, df_energy, df_finance):
                         ], style={"overflow": "auto", "height": "92vh"})
     return display
 
+'''
+Create a list of all the values inside the units file
+'''
+def create_list():
+    units_file_path = f"{ConfigGetter.units_path}"
+    values = []
+
+    with open(units_file_path) as f:
+        units_data = json.load(f)
+    
+    for key, val in units_data.items():
+        if isinstance(val, dict):
+            for inside_key, inside_value in val.items():
+                if isinstance(inside_value, dict):
+                    for i, j in inside_value.items():
+                        values.append(j)
+                else:
+                    values.append(inside_value)
+        else:
+            values.append(val)
+
+    return values
 
 
-def get_parameters(config, id=itertools.count()):
-    result = []
-    for i, (parameter, value) in enumerate(config.items()):
-        if parameter not in ["START_YEAR", "END_YEAR", "PERIODS_DAYS_AMOUNT"]:
-            parameter = parameter.replace("_", " ").lower().capitalize()
-            if type(value) in {int, float}:
+def get_parameters(config, id=itertools.count(), values = create_list(),id2 = itertools.count()):
+    result = []  
+    for parameter, value in config.items():
+        if parameter not in ["START_YEAR", "END_YEAR", "PERIODS_DAYS_AMOUNT","LOCATION"]:
+            parameter_name = parameter.replace("_", " ").lower().capitalize()
+            if type(value) in {int, float} and values:
                 result.append(dbc.Row(
-                    [dbc.Col(f"{parameter}:", width="auto"), dbc.Col(dbc.InputGroup([dbc.Input(id={'type': 'config-input', 'index': id.__next__()},
-                                                                               value=f"{value}", type="number"), dbc.InputGroupText("kg", id="units")
-                                                                                     ]))],
-                    className="my-2"))
+                    [dbc.Col(f"{parameter_name}:", width="auto",id2 = {'type': 'config-parameter', 'index': id2.__next__()}), dbc.Col(dbc.InputGroup([dbc.Input(id={'type': 'config-input', 'index': id.__next__()}, value=f"{value}", type="number"), 
+                    dbc.InputGroupText(f"{values.pop(0)}")
+                    ]))],
+                    className="my-2"
+            ))
             elif type(value) == dict:
-                result.append(dbc.Row(
-                    dbc.Accordion(dbc.AccordionItem(get_parameters(value, id), title=parameter), start_collapsed=True)))
+                    result.append(dbc.Row(
+                    dbc.Accordion(dbc.AccordionItem(get_parameters(value, id), title=parameter_name), start_collapsed=True)
+                    ))
+
     return result
+
+

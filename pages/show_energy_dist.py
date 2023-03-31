@@ -44,15 +44,30 @@ def update_daily_graph(clickData, df):
                      layout=go.Layout(barmode='stack', title=f"{date.strftime('%d/%m/%Y')} energy distribution")), {
                "display": "block"}
 
+'''
+The function uses recursion to find where does the inital value is stored and replaces it with the users input
+'''
+def replace_json_value(confi, parameter, val):
+     for key, inital_value in confi.items():
+            if isinstance(inital_value, dict):
+                replace_json_value(inital_value, parameter, val)
+            elif key == key:
+                confi[key] = val
+
 
 @callback(
     Output("config", "data", allow_duplicate=True),
-    Input({'type': 'config-input', 'index': ALL}, 'value'),
+    [Input({'type': 'config-input', 'index': ALL}, 'value'),
+    Input({'type': 'config-parameter', 'index': ALL}, 'value')],
     State("config", "data"),
     prevent_initial_call='initial_duplicate'
 )
-def change_config(val,confi):
+def change_config(val,parameter,confi):
     trigger = ctx.triggered_id
     if trigger:
-        print(val[trigger["index"]], trigger["index"])
+       replace_json_value(confi, parameter, val)
+
+    with open(ConfigGetter.json_path, 'w') as f:
+        json.dump(confi, f, indent = 4)
+
     return confi
