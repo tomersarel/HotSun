@@ -24,7 +24,10 @@ navbar = dbc.NavbarSimple(
     brand_href="/",
     color="transparent",
     dark=True,
-    style={"height": "8vh"}
+    style={"height": "8vh",
+           "background-image": "linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0))",
+           "-webkit-filter": "drop-shadow(5px 5px 5px #333333)",
+           "filter": "drop-shadow(5px 5px 5px #333333)"}
 )
 
 application.layout = html.Div([dbc.Carousel(
@@ -35,7 +38,7 @@ application.layout = html.Div([dbc.Carousel(
     ],
     controls=False,
     indicators=False,
-    interval=1500,
+    interval=3000,
     ride="carousel",
     className="carousel-fade",
     style={"z-index": "-1", "overflow": "hidden", "position": "absolute", "display": "block", "max-width" : "100%", "max-height" : "100%", "margin" : "auto", "padding" : "auto", "height" : "10000px", "width" : "10000px"}
@@ -49,7 +52,10 @@ application.layout = html.Div([dbc.Carousel(
                               "margin-top": "-50px",
                               "margin-left": "-150px"})],
              id="loading", style={"display": "none"}, className="text-center"),
-    dcc.Store(id="config", storage_type="session", data=json.load(open("config.json")))
+    dcc.Store(id="config", storage_type="session", data=json.load(open("config.json"))),
+    html.Div(style={"overflow": "hidden", "height": "100vh",
+                    "background-image": "linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0), rgba(0,0,0,0), rgba(0,0,0,0), rgba(0,0,0,0.1))",
+                    })
 ], style={"overflow": "hidden", "height": "100vh"})
 ConfigGetter.load_data()
 

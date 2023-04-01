@@ -158,7 +158,9 @@ def get_display(config, df_energy, df_finance):
                                        dbc.AccordionItem(display_pollution, title='Pollution')],
                                       always_open=True),
 
-                        ], style={"overflow": "auto", "height": "92vh"})
+                        ], style={"overflow": "auto", "height": "90vh", "background": "rgba(255, 255, 255, 0.3)",
+                          "backdrop-filter": "blur(8px)",
+                          "border-radius": "10px"})
     return display
 
 

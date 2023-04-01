@@ -65,26 +65,27 @@ def get_screen(i, period, start, end, location, startegy):
         return html.Div([dbc.Row([dbc.Col(html.H2("Enter purchase strategy"))]),
                          dbc.Row([dbc.Col([html.Big("description of this paramter like thie like")])]),
                          dbc.Row([dbc.Col(html.H1(" "))]),
-                         dbc.Row(dbc.Row([dbc.Col([dbc.Button(children="Download Template", id="download", color="secondary"),
-                                           dcc.Download(id="download-template")], width=3), dbc.Col(dcc.Upload(
-                             id='upload-data',
-                             children=html.Div(
-                                 dbc.Alert(html.Div(['Drag and Drop or ',
-                                                     html.B('Select Files')],
-                                                    style={"vertical-align": "center"}), id="msg",
-                                           color="light"), style={"height": "100%"})
-                             ,
-                             style={
-                                 'width': '100%',
-                                 'height': '96px',
-                                 'lineHeight': '60px',
-                                 'borderWidth': '1px',
-                                 'borderStyle': 'dashed',
-                                 'borderRadius': '5px',
-                                 'textAlign': 'center',
-                             },
-                             multiple=False
-                         ))])),
+                         dbc.Row(dbc.Row(
+                             [dbc.Col([dbc.Button(children="Download Template", id="download", color="secondary"),
+                                       dcc.Download(id="download-template")], width=3), dbc.Col(dcc.Upload(
+                                 id='upload-data',
+                                 children=html.Div(
+                                     dbc.Alert(html.Div(['Drag and Drop or ',
+                                                         html.B('Select Files')],
+                                                        style={"vertical-align": "center"}), id="msg",
+                                               color="light"), style={"height": "100%"})
+                                 ,
+                                 style={
+                                     'width': '100%',
+                                     'height': '96px',
+                                     'lineHeight': '60px',
+                                     'borderWidth': '1px',
+                                     'borderStyle': 'dashed',
+                                     'borderRadius': '5px',
+                                     'textAlign': 'center',
+                                 },
+                                 multiple=False
+                             ))])),
                          dbc.Row(dbc.Row([dbc.Col(dcc.Graph('myFig'), width=6), dbc.Col(dcc.Graph('myFig2'), width=6)]),
                                  style={"display": "none"}, id="graph-id"),
                          ],
@@ -117,7 +118,12 @@ layout = html.Div([dbc.Card(
                                       dbc.Col(dbc.Button("Next", id="next", n_clicks=0, style=center), width=2)]),
                              dbc.Row(dbc.Col(html.Small("1/5", style=bottom, id="step_num"), width=2),
                                      justify="center")])])]
-    , style={"display": "block", "width": "80%", "padding": "10px", "margin": "5% 10% 10% 10%"})
+    , style={"display": "block",
+             "width": "80%",
+             "padding": "10px",
+             "margin": "5% 10% 10% 10%",
+             "backdrop-filter": "blur(8px)"
+             }, color="rgba(255, 255, 255, 0.3")
     , dcc.Store(id="city-lon-lat", storage_type='local', data=ConfigGetter['LOCATION'])
     , dcc.Store(id="date-start", storage_type='local',
                 data=datetime.datetime.strptime(ConfigGetter['START_DATE'], ConfigGetter['TIME_FORMAT']))
@@ -126,6 +132,8 @@ layout = html.Div([dbc.Card(
     , dcc.Store(id="period-length", storage_type='local', data=ConfigGetter['PERIODS_DAYS_AMOUNT'])
     , dcc.Store(id="purchase-strategy", storage_type='local', data=ConfigGetter['STRATEGY'])])
 
+#"-webkit-filter": "drop-shadow(5px 5px 5px #333333)",
+#"filter": "drop-shadow(5px 5px 5px #333333)",
 
 @callback(
     Output('content', 'children'),

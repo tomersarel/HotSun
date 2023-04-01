@@ -1,10 +1,12 @@
+import json
+
 from imports import *
 from df_objects import *
-from pages.laod_display import generate_year_enr_graph, generate_day_enr_graph, dict_to_dataframe
+from pages.laod_display import generate_year_enr_graph, generate_day_enr_graph, dict_to_dataframe, get_parameter_wrapper
 
 dash.register_page(__name__)
 
-sidebar = html.Div([html.H4("Control Panel", className="text-center"),
+sidebar = html.Div([html.H4("Control Panel", className="text-center my-2"),
                     dbc.Button("Run", id="run", color="primary", style={"width": "45%"},
                                className="my-2 mx-2 text-center"),
                     dbc.Button("Cancel", id="cancel", color="primary", style={"width": "45%"},
@@ -12,11 +14,19 @@ sidebar = html.Div([html.H4("Control Panel", className="text-center"),
                     html.Div(id="paramerts", className="my-2 mx-2"),
                     dcc.Store(id="df_energy"), dcc.Store(id="df_finance"),
                     dcc.Location(id="location")],
-                   style={"height": "92vh", "width": "100%",
-                          "overflow-y": "auto", "overflow-x": "hidden"}, id="sidebar", className="my-3")
+                   style={"height": "90vh", "width": "100%",
+                          "overflow-y": "auto", "overflow-x": "hidden",
+                          "background": "rgba(255, 255, 255, 0.3)",
+                          "backdrop-filter": "blur(8px)",
+                          "border-radius": "10px"}, id="sidebar", className="mx-3")
 
 layout = html.Div([html.Div(id="placeholder"), dbc.Row([dbc.Col(sidebar, width=3),
-                                                        dbc.Col(id="display", width=9)]),
+                                                        dbc.Col(
+                                                            html.Div(style={"overflow": "auto", "height": "90vh",
+                                                                            "background": "rgba(255, 255, 255, 0.3)",
+                                                                            "backdrop-filter": "blur(8px)",
+                                                                            "border-radius": "10px"}), id="display",
+                                                            width=9)]),
                    ])
 
 
@@ -64,6 +74,7 @@ def replace_value(dict, hirarchy, value):
 
     dict[hirarchy[0]] = replace_value(dict[hirarchy[0]], hirarchy[1:], value)
     return dict
+
 
 @callback(
     Output("config", "data", allow_duplicate=True),
