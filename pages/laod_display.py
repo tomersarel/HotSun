@@ -3,6 +3,7 @@ from df_objects import *
 import pandas as pd
 import numpy as np
 
+
 energy_columns = ['Batteries', 'Solar', 'Buying', 'Selling', 'Lost', 'Storaged']
 colors = {"Solar": "#ffe205", "Batteries": "#d4d4d4", "Buying": "#ec4141", "Selling": "#5fbb4e", "Storaged": "#9edbf9",
           "Lost": "gray"}
@@ -71,16 +72,49 @@ def calculus(config, df_energy):
     return results
 def grade(calculus_results):
     green_g = 0
-    if (calculus_results['solar_percentage'] > 10):
+    solar_percentage = calculus_results['solar_percentage']
+
+    if solar_percentage < 0:
+        green_g += 5
+    elif 10 <= solar_percentage < 20:
+        green_g += 15
+    elif 30 <= solar_percentage < 45:
+        green_g += 25
+    else:
         green_g += 30
+    impact =  calculus_results['impact']
     if (calculus_results['impact'] > 0.0001):
+        green_g += 2
+    elif impact > 0.001 :
+        green_g += 4
+    elif impact > 0.01:
+        green_g += 6
+    elif impact > 0.1:
+        green_g += 8
+    elif impact > 0.5:
         green_g += 10
-    if (calculus_results['co2_saved'] > 50):
-        green_g += 20
-    if (calculus_results['savings'] > 200):
-        green_g += 40
+        co2_saved = calculus_results['co2_saved']
+        if co2_saved < 100000:
+            green_g += 5
+        elif 100000 <= co2_saved < 500000:
+            green_g += 10
+        elif 500000 <= co2_saved < 1000000:
+            green_g += 15
+        else:
+            green_g += 20
+        savings_per_hour = calculus_results['savings']
+        if savings_per_hour < 100:
+            green_g += 10
+        elif 10 <= savings_per_hour < 200:
+            green_g += 20
+        elif 30 <= savings_per_hour < 300:
+            green_g += 30
+        else:
+            green_g += 40
 
     return green_g
+
+
 def get_display(config, df_energy, df_finance):
     results = calculus(config, df_energy)
     green_g = grade(results)
@@ -102,44 +136,44 @@ def get_display(config, df_energy, df_finance):
                     html.H1(f"{results['co2_saved']} kg", className="card-title", style={"text-align": "center", "font-size": 48}),
                     html.H4("Pollution Saved", className="card-title", style={"text-align": "center"}),
                     html.P(
-                        "Amount of CO2 pollution saved by producing solar energy.",
+                        "Amount of CO2 pollution saved by producing energy by using solar panels.",
                         className="card-text",
                     )
                 ])
             ], style={"width": "18rem"}, className="mx-2 my-2"),
             dbc.Card([
                 dbc.CardBody([
-                    html.H1(f"{results['savings']} $", className="card-title", style={"text-align": "center", "font-size": 48}),
+                    html.H1(f"{results['savings']}$", className="card-title", style={"text-align": "center", "font-size": 48}),
                     html.H4("Finance", className="card-title", style={"text-align": "center"}),
                     html.P(
-                        ('this is how much you have saved by avarage period'),
+                        ('this is how much you have saved by a avarage hour'),
                         className="card-text",
                     )
                 ])
             ], style={"width": "18rem"}, className="mx-2 my-2"),
             dbc.Card([
                 dbc.CardBody([
-                    html.H1(f"{results['impact']} $", className="card-title", style={"text-align": "center", "font-size": 48}),
+                    html.H1(f"{results['impact']}%", className="card-title", style={"text-align": "center", "font-size": 48}),
                     html.H4("Climate Change", className="card-title", style={"text-align": "center"}),
                     html.P(
-                        "this is your procenteg of the israel produs power of solar energy",
+                        "this is your Percenteg of the israel production power of solar energy",
                         className="card-text",
                     )
                 ])
             ], style={"width": "18rem"}, className="mx-2 my-2"),
             dbc.Card([
                 dbc.CardBody([
-                    html.H1(f"{results['impact_increase']} X", className="card-title", style={"text-align": "center", "font-size": 48}),
+                    html.H1(f"{results['impact_increase']}X", className="card-title", style={"text-align": "center", "font-size": 48}),
                     html.H4("incrise in impact", className="card-title", style={"text-align": "center"}),
                     html.P(
-                        ('this is how much will be your procenteg out of tatal israel produs power of solar energy will multiplay if you increase by 5% your prous every year '),
+                        ('this is how much will be your procenteg out of tatal israel produs power of solar energy will multiplay if you increase by 5% your prous every year for 10 years '),
                         className="card-text",
                     )
                 ])
             ], style={"width": "18rem"}, className="mx-2 my-2"),
             dbc.Card([
                 dbc.CardBody([
-                    html.H1(f"{green_g} /100",  className="card-title",
+                    html.H1(f"{green_g}/100",  className="card-title",
                             style={"text-align": "center", "font-size": 48}),
                     html.H4("incrise in impact", className="card-title", style={"text-align": "center"}),
                     html.P(
