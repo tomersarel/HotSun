@@ -20,14 +20,13 @@ sidebar = html.Div([html.H4("Control Panel", className="text-center my-2"),
                           "backdrop-filter": "blur(8px)",
                           "border-radius": "10px"}, id="sidebar", className="mx-3")
 
-layout = html.Div([html.Div(id="placeholder"), dbc.Row([dbc.Col(sidebar, width=3),
-                                                        dbc.Col(
-                                                            html.Div(style={"overflow": "auto", "height": "90vh",
-                                                                            "background": "rgba(255, 255, 255, 0.3)",
-                                                                            "backdrop-filter": "blur(8px)",
-                                                                            "border-radius": "10px"}), id="display",
-                                                            width=9)]),
-                   ])
+layout = html.Div(dbc.Row([dbc.Col(sidebar, width=3),
+                           dbc.Col(
+                               html.Div(style={"overflow": "auto", "height": "90vh",
+                                               "background": "rgba(255, 255, 255, 0.3)",
+                                               "backdrop-filter": "blur(8px)",
+                                               "border-radius": "10px"}), id="display",
+                               width=9)]))
 
 
 @callback(
