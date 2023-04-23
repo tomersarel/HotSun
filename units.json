@@ -1,26 +1,26 @@
 {
   "battery":
   {
-    "capacity": "lg",
-    "lifetime": "mg",
-    "charge_rate": "sk",
-    "efficiency": "cv",
-    "decay_rate": "al"
+    "capacity": ["lg","temp1"],
+    "lifetime": ["mg","tem2"],
+    "charge_rate": ["sk","temp2"],
+    "efficiency": ["cv","temp3"],
+    "decay_rate": ["al","temp4"]
   },
   "solar":
   {
-    "lifetime": "kg",
-    "efficiency": "kg",
-    "decay_rate": "kg",
-    "area": "kg",
-    "max_power": "kg",
-    "peakpower": "kg",
-    "loss": "kg"
+    "lifetime": ["kg","temp5"],
+    "efficiency": ["kg","temp6"],
+    "decay_rate": ["kg","temp7"],
+    "area": ["kg","temp8"],
+    "max_power": ["kg","temp9"],
+    "peakpower": ["kg","temp10"],
+    "loss": ["kg","temp11"]
   },
   "STRATEGY":
   {
-    "solar_panel_purchased":{"0":"kg","1":"kg","2":"kg","3":"kg","4":"kg","5":"kg","6":"kg","7":"kg","8":"kg","9":"kg","10":"kg","11":"kg","12":"kg","13":"kg","14":"kg","15":"kg","16":"kg","17":"kg","18":"kg","19":"kg","20":"kg","21":"kg","22":"kg","23":"kg","24":"kg","25":"kg","26":"kg","27":"kg","28":"kg","29":"kg","30":"kg","31":"kg","32":"kg"},
-    "batteries_purchased":{"0":"kg","1":"kg","2":"kg","3":"kg","4": "kg","5": "kg","6": "kg","7": "kg","8": "kg","9": "kg","10": "kg","11": "kg","12": "kg","13": "kg","14": "kg","15": "kg","16": "kg","17": "kg","18": "kg","19": "kg","20": "kg","21": "kg","22": "kg","23": "kg","24": "kg","25": "kg","26": "kg","27": "kg","28": "kg","29": "kg","30": "kg","31": "kg","32": "kg"}
+    "solar_panel_purchased":{"0":["kg","temp12"],"1":["kg","temp12"],"2":["kg","temp12"],"3":["kg","temp12"],"4":["kg","temp12"],"5":["kg","temp12"],"6":["kg","temp12"],"7":["kg","temp12"],"8":["kg","temp12"],"9":["kg","temp12"],"10":["kg","temp12"],"11":["kg","temp12"],"12":["kg","temp12"],"13":["kg","temp12"],"14":["kg","temp12"],"15":["kg","temp12"],"16":["kg","temp12"],"17":["kg","temp12"],"18":["kg","temp12"],"19":["kg","temp12"],"20":["kg","temp12"],"21":["kg","temp12"],"22":["kg","temp12"],"23":["kg","temp12"],"24":["kg","temp12"],"25":["kg","temp12"],"26":["kg","temp12"],"27":["kg","temp12"],"28":["kg","temp12"],"29":["kg","temp12"],"30":["kg","temp12"],"31":["kg","temp12"],"32":["kg","temp12"]},
+    "batteries_purchased":{"0":["kg","temp12"],"1":["kg","temp12"],"2":["kg","temp12"],"3":["kg","temp12"],"4": ["kg","temp12"],"5": ["kg","temp12"],"6": ["kg","temp12"],"7": ["kg","temp12"],"8": ["kg","temp12"],"9": ["kg","temp12"],"10": ["kg","temp12"],"11": ["kg","temp12"],"12": ["kg","temp12"],"13": ["kg","temp12"],"14": ["kg","temp12"],"15": ["kg","temp12"],"16": ["kg","temp12"],"17": ["kg","temp12"],"18": ["kg","temp12"],"19": ["kg","temp12"],"20": ["kg","temp12"],"21": ["kg","temp12"],"22": ["kg","temp12"],"23": ["kg","temp12"],"24": ["kg","temp12"],"25": ["kg","temp12"],"26": ["kg","temp12"],"27": ["kg","temp12"],"28": ["kg","temp12"],"29": ["kg","temp12"],"30": ["kg","temp12"],"31": ["kg","temp12"],"32": ["kg","temp12"]}
   }
 
 }
