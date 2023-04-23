@@ -73,7 +73,7 @@ class PostProcessor():
 
             set_progress((str(period_i + 1), str(self.periods_amount), "Calculate incomes and pollutes...", f"{round((period_i + 1) / self.periods_amount * 100)}%"))
 
-        return pd.DataFrame(periodic_data, columns=['periodic_cost', 'periodic_profit', 'periodic_pollute']), total_benefit
+        return pd.DataFrame(periodic_data, columns=['periodic_cost', 'periodic_profit', 'periodic_C02', 'periodic_SOx', 'periodic_PMx']), total_benefit
 
     def calculate_periodic_cost(self, simulation_period_output: HourlySimulationDataOfPeriod,
                                 prices: HourlyPricesData,
@@ -151,10 +151,10 @@ class PostProcessor():
         """
         # TODO: move the constants to a config file
         # the data is presented in units of grams.
-        POLLUTION_RATES = {"CO2": 397, "NOx": 0.16, "PMx": 0.02} # units: g/kwh
+        POLLUTION_RATES = {"CO2": 397, "SOx": 0.16, "PMx": 0.02} # units: g/kwh
         periodic_electricity_buying = float(np.sum(simulation_period_output.get_electricity_buying()))
         period_pollution = {"CO2": POLLUTION_RATES["CO2"] * periodic_electricity_buying,
-                            "NOx": POLLUTION_RATES["NOx"] * periodic_electricity_buying,
+                            "SOx": POLLUTION_RATES["SOx"] * periodic_electricity_buying,
                             "PMx": POLLUTION_RATES["PMx"] * periodic_electricity_buying}  # units: g
         return period_pollution
 
