@@ -108,3 +108,4 @@ class Manager:
         period_start_date = self.start_date + datetime.timedelta(days=self.periods_length_in_days) * period_i
         period_end_date = self.start_date + datetime.timedelta(days=self.periods_length_in_days) * (period_i + 1)
         return period_start_date, period_end_date
+

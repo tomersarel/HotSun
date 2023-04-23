@@ -18,3 +18,7 @@ class ConfigGetter:
     @classmethod
     def __class_getitem__(cls, item):
         return cls.config_data_dict[item]
+
+    @classmethod
+    def __class_setitem__(cls, index, item):
+        cls.config_data_dict[index] = item
