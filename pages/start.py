@@ -26,7 +26,7 @@ def get_screen(i, period, start, end, location, startegy):
                                    placeholder='Select your city',
                                    options=[{"label": city, "value": f"{loc[0]}/{loc[1]}/{city}"} for (city, loc) in
                                             df_objects.get_town_loc_by_name()], persistence=True,
-                                   persistence_type='local', value="32.08/34.78")
+                                   persistence_type='local', value="32.08/34.78/Tel Aviv-Yafo")
         return html.Div([dbc.Row([dbc.Col(html.H2("Choose a city"))]),
                          dbc.Row([dbc.Col(html.Big("description of this paramter like thie like"))]),
                          dbc.Row([dbc.Col(html.H1(" "))]),
