@@ -45,4 +45,4 @@ class PeriodicSimulation:
 
 
     def get_result(self):
-        return self.result, self.state
+        return self.result, self.state, self.warnings
