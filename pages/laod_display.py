@@ -14,7 +14,7 @@ roundbutton = {
     "background-color": "transparent",
     "color": "black",
     "text-align": "center",
-    "display": "block",
+    "display": "inline-block",
     "font-size": 16,
     "height": 25,
     "width": 25,
@@ -176,8 +176,8 @@ def get_display(config, df_energy, df_finance):
                                       always_open=True),
 
                         ], style={"overflow": "auto", "height": "90vh", "background": "rgba(255, 255, 255, 0.3)",
-                          "backdrop-filter": "blur(8px)",
-                          "border-radius": "10px"})
+                                  "backdrop-filter": "blur(8px)",
+                                  "border-radius": "10px"})
     return display
 
 
@@ -197,46 +197,41 @@ def create_list(units_dict, units, explain):
 
 def get_parameters(config, units, explain, id=itertools.count(), id2=itertools.count(), loc=""):
     result = []
-    
+
     for parameter, value in config.items():
         if parameter not in ["START_YEAR", "END_YEAR", "PERIODS_DAYS_AMOUNT", "LOCATION"]:
             parameter_name = parameter.replace("_", " ").lower().capitalize()
             if type(value) in {int, float}:
-                result.append(dbc.Row(
-                    [
-                        dbc.Col(
-                            [
-                                html.Div(
-                                    [
-                                        f"{parameter_name}:",
-                                        dbc.Button("?",id= f"{loc}-{parameter}", className="far fa-question-circle", style=roundbutton),
-                                    ],
-                                    style={"display": "inline-block"}
-                                ),
-                                dbc.Popover(explain.pop(0), body=True, target=f"{loc}-{parameter}", trigger="hover", placement="right-start"),
-                            ],
-                            width=3,
-                        ),
-                        dbc.Col(
-                            dbc.InputGroup(
-                                [
-                                    dbc.Input(
-                                        id={'type': 'config-input', 'index': id.__next__()},
-                                        value=f"{value}",
-                                        type="number"
-                                    ),
-                                    dbc.InputGroupText(units.pop(0)),
-                                ]
+                result.append(dbc.Row([dbc.Col([
+                    f"{parameter_name}:",
+                    dbc.Button("?", id=f"{loc}-{parameter}", className="far fa-question-circle",
+                               style=roundbutton),
+                    dbc.Popover(explain.pop(0), body=True, target=f"{loc}-{parameter}",
+                                trigger="hover", placement="right-start", style={"display": "inline-block"}),
+                    dbc.InputGroup(
+                        [
+                            dbc.Input(
+                                id={'type': 'config-input', 'index': id.__next__()},
+                                value=f"{value}",
+                                type="number"
                             ),
-                            width=8,
-                        ),
-                    ],
+                            dbc.InputGroupText(units.pop(0)),
+                        ]
+                    ),
+                ], width=8,
+                ),
+                    dbc.Col(
+
+                        width=4,
+                    ),
+                ],
                     className="my-2",
                     style={"align-items": "left"}
                 ))
             elif type(value) == dict:
                 result.append(dbc.Row(
-                    dbc.Accordion(dbc.AccordionItem(get_parameters(value, units,explain, id, id2, f"{parameter}"), title=parameter_name),
+                    dbc.Accordion(dbc.AccordionItem(get_parameters(value, units, explain, id, id2, f"{parameter}"),
+                                                    title=parameter_name),
                                   start_collapsed=True)
                 ))
 
@@ -246,5 +241,5 @@ def get_parameters(config, units, explain, id=itertools.count(), id2=itertools.c
 def get_parameter_wrapper(config):
     with open(ConfigGetter.units_path) as f:
         units_data = json.load(f)
-    units,explain = create_list(units_data, [],[])
+    units, explain = create_list(units_data, [], [])
     return get_parameters(config, units, explain)
