@@ -71,7 +71,7 @@ class Manager:
             # activate the simulation for this period
             periodic_simulation.start()
 
-            simulation_output_data, self.current_state, warnings = periodic_simulation.get_result()
+            simulation_output_data, self.current_state = periodic_simulation.get_result()
             output.append(simulation_output_data)
             set_progress((str(period_i + 1), str(self.periods_amount), "Running Simulation...", f"{round((period_i + 1) / self.periods_amount * 100)}%"))
 
