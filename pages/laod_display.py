@@ -1,35 +1,79 @@
+import itertools
+
 from imports import *
 from df_objects import *
 import pandas as pd
 import numpy as np
 
+FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
+external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css", FONT_AWESOME]
+
+roundbutton = {
+    "border": "2px solid grey",
+    "border-radius": "50%",
+    "padding": 0,
+    "background-color": "transparent",
+    "color": "black",
+    "text-align": "center",
+    "display": "inline-block",
+    "font-size": 16,
+    "height": 25,
+    "width": 25,
+    "margin": 0,
+}
 
 energy_columns = ['Batteries', 'Solar', 'Buying', 'Selling', 'Lost', 'Storaged']
+pollution_columns = ['periodic_C02', 'periodic_SOx', 'periodic_PMx']
 colors = {"Solar": "#ffe205", "Batteries": "#d4d4d4", "Buying": "#ec4141", "Selling": "#5fbb4e", "Storaged": "#9edbf9",
-          "Lost": "gray"}
+          "Lost": "gray", 'periodic_C02': "red", 'periodic_SOx': "blue", 'periodic_PMx': "gray"}
 
 
-def generate_year_enr_graph(start_year, end_year, df, resample='D'):
-    data = df[(df['Date'] >= datetime.datetime(year=start_year, day=1, month=1)) & (
-            df['Date'] < datetime.datetime(year=end_year, day=1, month=1))]
-    data = data.resample(resample, on='Date', convention="start").sum()
+def generate_energy_graph_by_date_range(start, end, df, resample='H'):
+    """
+    generate energy graph by Datetime.Datetime range and resample it.
+    :param start: the start date
+    :param end: the end date
+    :param df: the energy df
+    :param resample: the resample type
+    :return: array of bars by different energy types
+    """
+    # df = df.set_index(['Date'])
+    data = df[(df.index >= start) & (df.index < end)]
+    if resample != 'H':
+        data = data.resample(resample, convention="start").sum()
     return [go.Bar(x=data.index, y=data[col], name=col, marker={'color': colors[col], 'line.width': 0}) for col in
             energy_columns]
 
 
+def generate_year_enr_graph(start_year, end_year, df, resample='Y'):
+    """
+    generate energy graph by year range and resample it
+    """
+    return generate_energy_graph_by_date_range(datetime.datetime(year=start_year, day=1, month=1),
+                                               datetime.datetime(year=end_year, day=1, month=1),
+                                               df, resample)
+
+
 def generate_day_enr_graph(date, df):
-    df = df[(df['Date'] >= date) & (df['Date'] < date + datetime.timedelta(days=1))]
-    df = df.set_index('Date')
-    return [go.Bar(x=df.index.hour, y=df[col], name=col, marker={'color': colors[col], 'line.width': 0}) for col in
-            energy_columns]
+    """
+        generate energy graph for single date by hour
+    """
+    return generate_energy_graph_by_date_range(date,
+                                               date + datetime.timedelta(days=1),
+                                               df, 'H')
 
 
 def dict_to_dataframe(df):
+    """
+    this function create data frame from dict
+    :param df: the given dict
+    :return: pandas data frame
+    """
     df = pd.DataFrame(df)
     if df.empty:
         return df
     df['Date'] = pd.to_datetime(df['Date'], dayfirst=True)
-    df.set_index('Date')
+    df = df.set_index('Date')
     for coloumn in df.columns:
         if coloumn in energy_columns:
             df[coloumn] = pd.to_numeric(df[coloumn])
@@ -39,7 +83,7 @@ def dict_to_dataframe(df):
 def calculus(config, df_energy):
     # calculate solar energy percentage
     df_energy['Total'] = df_energy['Solar'] + df_energy['Buying'] + df_energy['Batteries']
-
+    
     total_energy = df_energy['Total'].sum()
     solar_energy = df_energy['Solar'].sum()
     solar_percentage = round((solar_energy / total_energy) * 100, 2)
@@ -70,6 +114,8 @@ def calculus(config, df_energy):
     }
 
     return results
+
+
 def grade(calculus_results):
     green_g = 0
     solar_percentage = calculus_results['solar_percentage']
@@ -215,9 +261,11 @@ def get_display(config, df_energy, df_finance):
 
     display_pollution = html.Div([dcc.Graph(id='yearlyPollutionGraph',
                                             figure=go.Figure(
-                                                data=go.Bar(x=df_finance.index, y=df_finance['periodic_pollute'],
-                                                            name='cost', marker={'color': 'red', 'line.width': 0}),
-                                                layout=go.Layout(barmode='stack', title=f"total pollution per period")),
+                                                data=[go.Bar(x=df_finance.index, y=df_finance[col], name=col,
+                                                             marker={'color': colors[col], 'line.width': 0})
+                                                      for index, col in enumerate(pollution_columns)],
+                                                layout=go.Layout(title=f"total pollution per period")),
+
                                             style={"height": "600px"})])
 
     display = html.Div([dbc.Accordion([dbc.AccordionItem(display_summery, title='Summery'),
@@ -226,19 +274,76 @@ def get_display(config, df_energy, df_finance):
                                        dbc.AccordionItem(display_pollution, title='Pollution')],
                                       always_open=True),
 
-                        ], style={"overflow": "auto", "height": "92vh"})
+                        ], style={"overflow": "auto", "height": "90vh", "background": "rgba(255, 255, 255, 0.3)",
+                                  "backdrop-filter": "blur(8px)",
+                                  "border-radius": "10px"})
     return display
 
-def get_parameters(config):
+def create_list(units_dict, units, explain):
+    """
+    Create a list of all the values by order from recursive dict
+    """
+    for key, val in units_dict.items():
+        if isinstance(val, dict):
+            units, explain = create_list(val, units, explain)
+        else:
+            units.append(val.pop(0))
+            explain.append(val.pop(0))
+
+    return units, explain
+
+
+def get_parameters(config, units, explain, id=itertools.count(), loc=""):
     result = []
+
     for parameter, value in config.items():
-        if parameter not in ["START_YEAR", "END_YEAR", "PERIODS_DAYS_AMOUNT"]:
-            parameter = parameter.replace("_", " ").lower().capitalize()
-            if type(value) == int:
-                result.append(dbc.Row(
-                    [dbc.Col(f"{parameter}:", width="auto"), dbc.Col(dbc.Input(placeholder=f"{value}", type="number"))],
-                    className="my-2"))
+        if parameter not in ConfigGetter.private_keys:
+            parameter_name = parameter.replace("_", " ").lower().capitalize()
+            if type(value) in {int, float}:
+                if parameter.isnumeric():
+                    result.append(dbc.Row([
+                        dbc.Col([f"Period {int(parameter) + 1}:"], width="auto"),
+                        dbc.Col(
+                        dbc.Input(
+                            id={'type': 'config-input', 'index': id.__next__()},
+                            value=f"{value}",
+                            type="number"
+                        ), width=True)
+                    ], className="my-2", align="center"))
+                else:
+                    result.append(dbc.Row([
+                        dbc.Col([f"{parameter_name}:"], width="auto"),
+                        dbc.Col([dbc.Button("?", id=f"{loc}-{parameter}", className="fa-question-circle",
+                                            style=roundbutton),
+                                 dbc.Popover(explain.pop(0), body=True, target=f"{loc}-{parameter}",
+                                             trigger="hover", placement="right-start")], width=2),
+                        dbc.Col(
+                            dbc.InputGroup(
+                                [
+                                    dbc.Input(
+                                        id={'type': 'config-input', 'index': id.__next__()},
+                                        value=f"{value}",
+                                        type="number"
+                                    ),
+                                    dbc.InputGroupText(units.pop(0)),
+                                ]
+                            )
+                            , width=True)
+                    ], className="my-2", align="center"
+                    ))
             elif type(value) == dict:
                 result.append(dbc.Row(
-                    dbc.Accordion(dbc.AccordionItem(get_parameters(value), title=parameter), start_collapsed=True)))
+                    dbc.Accordion(dbc.AccordionItem(get_parameters(value, units, explain, id, f"{loc}-{parameter}"),
+                                                    title=parameter_name),
+                                  start_collapsed=True)
+                ))
+
     return result
+
+
+def get_parameter_wrapper(config):
+    with open(ConfigGetter.units_path) as f:
+        units_data = json.load(f)
+    units, explain = create_list(units_data, [], [])
+    return get_parameters(config, units, explain)
+
