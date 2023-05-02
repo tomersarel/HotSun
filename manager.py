@@ -61,8 +61,7 @@ class Manager:
         logging.info(f"Manager: starts simulation")
         output = []
 
-        bar = tqdm(range(self.periods_amount))
-        for period_i in bar:
+        for period_i in tqdm(range(self.periods_amount)):
             logging.info(f"Manager: enters {period_i} period of the simulation.")
             # create the period simulation object
             demand, solar_rad = self.slice_data_for_period(period_i)

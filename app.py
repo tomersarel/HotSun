@@ -1,4 +1,6 @@
 import json
+import sys
+
 from imports import *
 import period_strategy
 from df_objects import *
@@ -24,7 +26,7 @@ navbar = dbc.NavbarSimple(
     brand_href="/",
     color="transparent",
     dark=True,
-    style={"height": "8vh",
+    style={"height": "80px",
            "background-image": "linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0))",
            "-webkit-filter": "drop-shadow(5px 5px 5px #333333)",
            "filter": "drop-shadow(5px 5px 5px #333333)"}
@@ -41,7 +43,7 @@ application.layout = html.Div([dbc.Carousel(
     interval=3000,
     ride="carousel",
     className="carousel-fade",
-    style={"z-index": "-1", "overflow": "hidden", "position": "absolute", "display": "block", "max-width" : "100%", "max-height" : "100%", "margin" : "auto", "padding" : "auto", "height" : "10000px", "width" : "10000px"}
+    style={"z-index": "-1", "overflow": "hidden", "position": "absolute", "margin": "auto", "padding": "auto", "height": "100vh", "width": "100vw"}
 ),
     navbar,
     dash.page_container,
@@ -84,7 +86,7 @@ ConfigGetter.load_data()
 )
 def func(set_progress, n, config):
     print(config)
-    print("start")
+    print("good")
     logging.info("Preprocess - Uploading files")
     set_progress(("0", "1", "Gathering Data...", "100%"))
     demand_hourly = DemandHourlyCityData(config['LOCATION']['name'])

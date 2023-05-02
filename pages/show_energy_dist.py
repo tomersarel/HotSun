@@ -77,13 +77,14 @@ def replace_value(dict, hirarchy, value):
 
 @callback(
     Output("config", "data", allow_duplicate=True),
-    [Input({'type': 'config-input', 'index': ALL}, 'value'),
-     Input({'type': 'config-parameter', 'index': ALL}, 'children')],
+    Input({'type': 'config-input', 'index': ALL}, 'value'),
+     #Input({'type': 'config-parameter', 'index': ALL}, 'children')],
     State("config", "data"),
     prevent_initial_call=True
 )
-def change_config(val, parameter, config):
+def change_config(val, config):
     trigger = ctx.triggered_id
     if trigger and type(val[trigger["index"]]) in [int, float]:
-        config = replace_value(config, parameter[trigger["index"]].split("-")[1:], val[trigger["index"]])
+        config = replace_value(config, ConfigGetter.get_locations(config)[trigger["index"]].split("-")[1:], val[trigger["index"]])
+        print(config)
     return config

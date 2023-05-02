@@ -4,6 +4,23 @@ from imports import *
 from df_objects import *
 import pandas as pdg
 
+FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
+external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css", FONT_AWESOME]
+
+roundbutton = {
+    "border": "2px solid grey",
+    "border-radius": "50%",
+    "padding": 0,
+    "background-color": "transparent",
+    "color": "black",
+    "text-align": "center",
+    "display": "inline-block",
+    "font-size": 16,
+    "height": 25,
+    "width": 25,
+    "margin": 0,
+}
+
 energy_columns = ['Batteries', 'Solar', 'Buying', 'Selling', 'Lost', 'Storaged']
 pollution_columns = ['periodic_C02', 'periodic_SOx', 'periodic_PMx']
 colors = {"Solar": "#ffe205", "Batteries": "#d4d4d4", "Buying": "#ec4141", "Selling": "#5fbb4e", "Storaged": "#9edbf9",
@@ -167,43 +184,61 @@ def get_display(config, df_energy, df_finance):
     return display
 
 
-def create_list(units_dict, values):
+def create_list(units_dict, units, explain):
     """
     Create a list of all the values by order from recursive dict
     """
     for key, val in units_dict.items():
         if isinstance(val, dict):
-            values = create_list(val, values)
+            units, explain = create_list(val, units, explain)
         else:
-            values.append(val)
+            units.append(val.pop(0))
+            explain.append(val.pop(0))
 
-    return values
+    return units, explain
 
 
-def get_parameters(config, units, id=itertools.count(), id2=itertools.count(), loc=""):
+def get_parameters(config, units, explain, id=itertools.count(), loc=""):
     result = []
 
     for parameter, value in config.items():
-        if parameter not in ["START_YEAR", "END_YEAR", "PERIODS_DAYS_AMOUNT", "LOCATION"]:
+        if parameter not in ConfigGetter.private_keys:
             parameter_name = parameter.replace("_", " ").lower().capitalize()
             if type(value) in {int, float}:
-                result.append(dbc.Row(
-                    [dbc.Col([f"{parameter_name}:",
-                              html.Div(f"{loc}-{parameter}",
-                                       id={'type': 'config-parameter', 'index': id2.__next__()})],
-                             width="auto"),
-                     dbc.Col(dbc.InputGroup([dbc.Input(
-                         id={'type': 'config-input', 'index': id.__next__()},
-                         value=f"{value}",
-                         type="number"),
-                         dbc.InputGroupText(
-                             f"{units.pop(0)}")
-                     ]))],
-                    className="my-2"
-                ))
+                if parameter.isnumeric():
+                    result.append(dbc.Row([
+                        dbc.Col([f"Period {int(parameter) + 1}:"], width="auto"),
+                        dbc.Col(
+                        dbc.Input(
+                            id={'type': 'config-input', 'index': id.__next__()},
+                            value=f"{value}",
+                            type="number"
+                        ), width=True)
+                    ], className="my-2", align="center"))
+                else:
+                    result.append(dbc.Row([
+                        dbc.Col([f"{parameter_name}:"], width="auto"),
+                        dbc.Col([dbc.Button("?", id=f"{loc}-{parameter}", className="fa-question-circle",
+                                            style=roundbutton),
+                                 dbc.Popover(explain.pop(0), body=True, target=f"{loc}-{parameter}",
+                                             trigger="hover", placement="right-start")], width=2),
+                        dbc.Col(
+                            dbc.InputGroup(
+                                [
+                                    dbc.Input(
+                                        id={'type': 'config-input', 'index': id.__next__()},
+                                        value=f"{value}",
+                                        type="number"
+                                    ),
+                                    dbc.InputGroupText(units.pop(0)),
+                                ]
+                            )
+                            , width=True)
+                    ], className="my-2", align="center"
+                    ))
             elif type(value) == dict:
                 result.append(dbc.Row(
-                    dbc.Accordion(dbc.AccordionItem(get_parameters(value, units, id, id2, f"{loc}-{parameter}"),
+                    dbc.Accordion(dbc.AccordionItem(get_parameters(value, units, explain, id, f"{loc}-{parameter}"),
                                                     title=parameter_name),
                                   start_collapsed=True)
                 ))
@@ -214,5 +249,5 @@ def get_parameters(config, units, id=itertools.count(), id2=itertools.count(), l
 def get_parameter_wrapper(config):
     with open(ConfigGetter.units_path) as f:
         units_data = json.load(f)
-    units = create_list(units_data, [])
-    return get_parameters(config, units)
+    units, explain = create_list(units_data, [], [])
+    return get_parameters(config, units, explain)
