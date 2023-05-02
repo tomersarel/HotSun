@@ -18,7 +18,7 @@ roundbutton = {
     "font-size": 16,
     "height": 25,
     "width": 25,
-    "margin": 20,
+    "margin": 0,
 }
 
 energy_columns = ['Batteries', 'Solar', 'Buying', 'Selling', 'Lost', 'Storaged']
@@ -195,42 +195,47 @@ def create_list(units_dict, units, explain):
     return units, explain
 
 
-def get_parameters(config, units, explain, id=itertools.count(), id2=itertools.count(), loc=""):
+def get_parameters(config, units, explain, id=itertools.count(), loc=""):
     result = []
 
     for parameter, value in config.items():
-        if parameter not in ["START_YEAR", "END_YEAR", "PERIODS_DAYS_AMOUNT", "LOCATION"]:
+        if parameter not in ConfigGetter.private_keys:
             parameter_name = parameter.replace("_", " ").lower().capitalize()
             if type(value) in {int, float}:
-                result.append(dbc.Row([dbc.Col([
-                    f"{parameter_name}:",
-                    dbc.Button("?", id=f"{loc}-{parameter}", className="far fa-question-circle",
-                               style=roundbutton),
-                    dbc.Popover(explain.pop(0), body=True, target=f"{loc}-{parameter}",
-                                trigger="hover", placement="right-start", style={"display": "inline-block"}),
-                    dbc.InputGroup(
-                        [
-                            dbc.Input(
-                                id={'type': 'config-input', 'index': id.__next__()},
-                                value=f"{value}",
-                                type="number"
-                            ),
-                            dbc.InputGroupText(units.pop(0)),
-                        ]
-                    ),
-                ], width=8,
-                ),
-                    dbc.Col(
-
-                        width=4,
-                    ),
-                ],
-                    className="my-2",
-                    style={"align-items": "left"}
-                ))
+                if parameter.isnumeric():
+                    result.append(dbc.Row([
+                        dbc.Col([f"Period {int(parameter) + 1}:"], width="auto"),
+                        dbc.Col(
+                        dbc.Input(
+                            id={'type': 'config-input', 'index': id.__next__()},
+                            value=f"{value}",
+                            type="number"
+                        ), width=True)
+                    ], className="my-2", align="center"))
+                else:
+                    result.append(dbc.Row([
+                        dbc.Col([f"{parameter_name}:"], width="auto"),
+                        dbc.Col([dbc.Button("?", id=f"{loc}-{parameter}", className="fa-question-circle",
+                                            style=roundbutton),
+                                 dbc.Popover(explain.pop(0), body=True, target=f"{loc}-{parameter}",
+                                             trigger="hover", placement="right-start")], width=2),
+                        dbc.Col(
+                            dbc.InputGroup(
+                                [
+                                    dbc.Input(
+                                        id={'type': 'config-input', 'index': id.__next__()},
+                                        value=f"{value}",
+                                        type="number"
+                                    ),
+                                    dbc.InputGroupText(units.pop(0)),
+                                ]
+                            )
+                            , width=True)
+                    ], className="my-2", align="center"
+                    ))
             elif type(value) == dict:
                 result.append(dbc.Row(
-                    dbc.Accordion(dbc.AccordionItem(get_parameters(value, units, explain, id, id2, f"{parameter}"),
+                    dbc.Accordion(dbc.AccordionItem(get_parameters(value, units, explain, id, f"{loc}-{parameter}"),
                                                     title=parameter_name),
                                   start_collapsed=True)
                 ))

@@ -33,7 +33,7 @@ class PostProcessor():
     def get_period_dates_by_index(self, period_i: int) -> (datetime.datetime, datetime.datetime):
         period_len = datetime.timedelta(days=self.periods_length_in_days)
         start_date = self.start_date + period_i * period_len + datetime.timedelta(days=1)
-        end_date = start_date + period_len - datetime.timedelta(hours=1)
+        end_date = start_date + period_len  # - datetime.timedelta(hours=1)
         return start_date, end_date
 
     def run_post_processor(self, set_progress):
@@ -99,6 +99,7 @@ class PostProcessor():
          4)
         :return:
         """
+        print(start_date, end_date)
         buying_prices = prices.get_buying_price_by_range_of_date(start_date, end_date)
         battery_capex_prices = prices.get_battery_capex_by_range_of_date(start_date, end_date)
         panel_capex_prices = prices.get_solar_panel_capex_by_range_of_date(start_date, end_date)

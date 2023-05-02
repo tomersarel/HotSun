@@ -104,7 +104,8 @@ def get_screen(i, period, start, end, location, startegy):
                               dbc.Col(html.H4(html.I(className="bi bi-pin-map-fill")), width=1),
                               dbc.Col(f"{location[0]}/{location[1]}")]),
                          dbc.Row([dbc.Col(html.P("\n\n\n"))]),
-                         dbc.Row([dbc.Col(dbc.Button("Run", id="run1", href="/show-energy-dist"))])
+                         dbc.Row([dbc.Col(dbc.Button("Run", id="run1", href="/show-energy-dist"))]),
+                                 html.Div(id="initial")
                          ],
                         style={"padding": "20px"})
 
@@ -154,7 +155,7 @@ def update_output(n_clicks1, n_clicks2, period, start, end, loc, strategy):
 
 @callback(
     Output('config', 'data'),
-    Input('run1', 'n_clicks'),
+    Input('initial', 'children'),
     State("period-length", "data"),
     State("date-start", "data"), State("date-end", "data"),
     State('city-lon-lat', 'data'),
@@ -173,6 +174,7 @@ def update_config(n, period, start, end, loc, strategy):
     config['STRATEGY'] = json.loads(strategy)
     loc = loc.split("/")
     config["LOCATION"] = {"latitude": float(loc[0]), "longitude": float(loc[1]), "name": loc[2]}
+    print(config)
     return config
 
 
