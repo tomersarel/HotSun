@@ -1,0 +1,21 @@
+{
+  "battery":
+  {
+    "capacity": ["lg","temp1"],
+    "lifetime": ["mg","tem2"],
+    "charge_rate": ["sk","temp2"],
+    "efficiency": ["cv","temp3"],
+    "decay_rate": ["al","temp4"]
+  },
+  "solar":
+  {
+    "lifetime": ["kg","temp5"],
+    "efficiency": ["kg","temp6"],
+    "decay_rate": ["kg","temp7"],
+    "area": ["kg","temp8"],
+    "max_power": ["kg","temp9"],
+    "peakpower": ["kg","temp10"],
+    "loss": ["kg","temp11"]
+  }
+
+}

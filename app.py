@@ -1,11 +1,13 @@
 import json
+import sys
+
 from imports import *
 import period_strategy
 from df_objects import *
 from manager import Manager
 import hourly_strategy
 from post_processor import PostProcessor
-from pages.laod_display import get_parameters, get_display
+from pages.laod_display import get_parameter_wrapper, get_display
 
 logging.info("Start application")
 
@@ -22,22 +24,41 @@ navbar = dbc.NavbarSimple(
     ],
     brand="Hot Sun",
     brand_href="/",
-    color="primary",
+    color="transparent",
     dark=True,
-    style={"height": "8vh"}
+    style={"height": "80px",
+           "background-image": "linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0))",
+           "-webkit-filter": "drop-shadow(5px 5px 5px #333333)",
+           "filter": "drop-shadow(5px 5px 5px #333333)"}
 )
 
-application.layout = html.Div([navbar,
-                            dash.page_container,
-                               html.Div([html.Div([html.H3("Loading...", id="loading-label"),
-                                                   dbc.Progress(id="progress_bar",
-                                                                style={'width': '300px', 'height': '20px'})],
-                                                  style={"position": "absolute", "left": "50%", "top": "50%",
-                                                         "margin-top": "-50px",
-                                                         "margin-left": "-150px"})],
-                                        id="loading", style={"display": "none"}, className="text-center"),
-                               dcc.Store(id="config", storage_type="memory", data=json.load(open("config.json")))
-                               ], style={"overflow": "hidden"})
+application.layout = html.Div([dbc.Carousel(
+    items=[
+        {"key": "1", "src": "/assets/back3.jpg"},
+        {"key": "2", "src": "/assets/back4.jpg"},
+        {"key": "3", "src": "/assets/back4.jpeg"}
+    ],
+    controls=False,
+    indicators=False,
+    interval=3000,
+    ride="carousel",
+    className="carousel-fade",
+    style={"z-index": "-1", "overflow": "hidden", "position": "absolute", "margin": "auto", "padding": "auto", "height": "100vh", "width": "100vw"}
+),
+    navbar,
+    dash.page_container,
+    html.Div([html.Div([html.H3("Loading...", id="loading-label"),
+                        dbc.Progress(id="progress_bar",
+                                     style={'width': '300px', 'height': '20px'})],
+                       style={"position": "absolute", "left": "50%", "top": "50%",
+                              "margin-top": "-50px",
+                              "margin-left": "-150px"})],
+             id="loading", style={"display": "none"}, className="text-center"),
+    dcc.Store(id="config", storage_type="session", data=json.load(open("config.json"))),
+    html.Div(style={"overflow": "hidden", "height": "100vh",
+                    "background-image": "linear-gradient(rgba(0,0,0,0), rgba(0,0,0,0), rgba(0,0,0,0), rgba(0,0,0,0), rgba(0,0,0,0.1))",
+                    })
+], style={"overflow": "hidden", "height": "100vh"})
 ConfigGetter.load_data()
 
 
@@ -55,7 +76,7 @@ ConfigGetter.load_data()
         (Output("loading", "style"), {"display": 'block', 'position': 'absolute',
                                       'top': '8%', 'left': '25%',
                                       'text-align': "center", 'width': "75%", "height": "92%",
-                                      "background": "rgba(255,255,255,0.8)", "background-size": "cover"}
+                                      "background": "rgba(255,255,255,0)", "background-size": "cover"}
          , {"display": "none"})
     ],
     cancel=[Input("cancel", "n_clicks"), Input("location", "href")],
@@ -64,7 +85,6 @@ ConfigGetter.load_data()
     prevent_intial_call=True
 )
 def func(set_progress, n, config):
-    print("start")
     logging.info("Preprocess - Uploading files")
     set_progress(("0", "1", "Gathering Data...", "100%"))
     demand_hourly = DemandHourlyCityData(config['LOCATION']['name'])
@@ -92,7 +112,8 @@ def func(set_progress, n, config):
     logging.info("Postprocess - Start computing results")
 
     set_progress(("1", "1", "Displaying results...", "100%"))
-    return get_parameters(config), output_energy.to_dict('records'), output_post_processor.to_dict('records'), \
+
+    return get_parameter_wrapper(config), output_energy.to_dict('records'), output_post_processor.to_dict('records'), \
            get_display(config, output_energy, output_post_processor)
 
 

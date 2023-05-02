@@ -290,7 +290,6 @@ class HourlyPricesData(Cost):
                   "SolarPanelCapex", "SolarPanelOpex"]
 
         self.df = pd.read_csv("data/ElectricityPrices.csv", header=[0])
-        # print(self.df.columns)
         self.df['Date'] = pd.to_datetime(self.df['Date'], dayfirst=True)
 
     def get_start_and_end_hour(self, start_date: datetime.datetime,
@@ -319,7 +318,7 @@ class HourlyPricesData(Cost):
         start_date = start_date.replace(hour=0)
         end_date = end_date.replace(hour=0)
 
-        period = self.df[(self.df['Date'] >= start_date) & (self.df['Date'] <= end_date)].to_numpy()
+        period = self.df[(self.df['Date'] >= start_date) & (self.df['Date'] < end_date)].to_numpy()
 
         return [hour[self.BUYING_INDEX] for hour in period]
 
@@ -335,7 +334,7 @@ class HourlyPricesData(Cost):
         start_date = start_date.replace(hour=0)
         end_date = end_date.replace(hour=0)
 
-        period = self.df[(self.df['Date'] >= start_date) & (self.df['Date'] <= end_date)].to_numpy()
+        period = self.df[(self.df['Date'] >= start_date) & (self.df['Date'] < end_date)].to_numpy()
 
         return [hour[self.SELLING_INDEX] for hour in period]
 
@@ -351,7 +350,7 @@ class HourlyPricesData(Cost):
         start_date = start_date.replace(hour=0)
         end_date = end_date.replace(hour=0)
 
-        period = self.df[(self.df['Date'] >= start_date) & (self.df['Date'] <= end_date)].to_numpy()
+        period = self.df[(self.df['Date'] >= start_date) & (self.df['Date'] < end_date)].to_numpy()
 
         return [hour[self.BATTERY_CAPEX_INDEX] for hour in period]
 
@@ -367,7 +366,7 @@ class HourlyPricesData(Cost):
         start_date = start_date.replace(hour=0)
         end_date = end_date.replace(hour=0)
 
-        period = self.df[(self.df['Date'] >= start_date) & (self.df['Date'] <= end_date)].to_numpy()
+        period = self.df[(self.df['Date'] >= start_date) & (self.df['Date'] < end_date)].to_numpy()
 
         return [hour[self.BATTERY_OPEX_INDEX] for hour in period]
 
@@ -384,7 +383,7 @@ class HourlyPricesData(Cost):
         start_date = start_date.replace(hour=0)
         end_date = end_date.replace(hour=0)
 
-        period = self.df[(self.df['Date'] >= start_date) & (self.df['Date'] <= end_date)].to_numpy()
+        period = self.df[(self.df['Date'] >= start_date) & (self.df['Date'] < end_date)].to_numpy()
 
         return [hour[self.PANEL_CAPEX_INDEX] for hour in period]
 
@@ -400,7 +399,7 @@ class HourlyPricesData(Cost):
         start_date = start_date.replace(hour=0)
         end_date = end_date.replace(hour=0)
 
-        period = self.df[(self.df['Date'] >= start_date) & (self.df['Date'] <= end_date)].to_numpy()
+        period = self.df[(self.df['Date'] >= start_date) & (self.df['Date'] < end_date)].to_numpy()
 
         return [hour[self.PANEL_OPEX_INDEX] for hour in period]
 
@@ -459,7 +458,7 @@ class HourlyEmmision(Pollution):
         start_date = start_date.replace(hour=0)
         end_date = end_date.replace(hour=0)
 
-        period = self.df[(self.df['Date'] >= start_date) & (self.df['Date'] <= end_date)].to_numpy()
+        period = self.df[(self.df['Date'] >= start_date) & (self.df['Date'] < end_date)].to_numpy()
 
         return [hour[-1] for hour in period]  # removes dates
 
@@ -537,7 +536,7 @@ class HourlySimulationDataOfPeriod(PeriodsSimulation):
     """
 
     def __init__(self, simulation_output: pd.DataFrame, start_date: datetime.datetime, end_date: datetime.datetime):
-        self.df = simulation_output[(simulation_output['Date'] >= start_date) & (simulation_output['Date'] <= end_date)]
+        self.df = simulation_output[(simulation_output['Date'] >= start_date) & (simulation_output['Date'] < end_date)]
 
     # todo: consider change it to numpy arrays
     def get_new_batteries(self):
