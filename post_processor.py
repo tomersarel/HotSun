@@ -2,6 +2,7 @@ import datetime
 import logging
 import pprint
 import unittest
+from typing import Dict
 
 # import numpy
 import numpy as np
@@ -16,10 +17,13 @@ from df_objects import HourlyPricesData, HourlyEmmision, HourlySimulationDataOfP
 
 
 class PostProcessor():
-    DATA_TYPES_AMOUNT = 3
+    DATA_TYPES_AMOUNT = 5
     PERIODIC_COST_INDEX = 0
     PERIODIC_PROFIT_INDEX = 1
-    PERIODIC_POLLUTE_INDEX = 2
+    PERIODIC_CO2_INDEX = 2
+    PERIODIC_SOx_INDEX = 3
+    PERIODIC_PMx_INDEX = 4
+
 
     def __init__(self, simulation_output: pandas.DataFrame, config):
         time_string_format = config["TIME_FORMAT"]
@@ -56,17 +60,20 @@ class PostProcessor():
                 prices,
                 start_date,
                 end_date)
-            periodic_data[period_i][self.PERIODIC_POLLUTE_INDEX] = self.calculate_periodic_pollute(
+            total_pollute = self.calculate_periodic_pollute(
                 simulation_period_output,
                 emission_rate,
                 start_date,
                 end_date)
+            periodic_data[period_i][self.PERIODIC_CO2_INDEX] = total_pollute["CO2"]
+            periodic_data[period_i][self.PERIODIC_SOx_INDEX] = total_pollute["SOx"]
+            periodic_data[period_i][self.PERIODIC_PMx_INDEX] = total_pollute["PMx"]
             total_benefit += periodic_data[period_i][self.PERIODIC_PROFIT_INDEX] - \
                              periodic_data[period_i][self.PERIODIC_COST_INDEX]
 
             set_progress((str(period_i + 1), str(self.periods_amount), "Calculate incomes and pollutes...", f"{round((period_i + 1) / self.periods_amount * 100)}%"))
 
-        return pd.DataFrame(periodic_data, columns=['periodic_cost', 'periodic_profit', 'periodic_pollute']), total_benefit
+        return pd.DataFrame(periodic_data, columns=['periodic_cost', 'periodic_profit', 'periodic_C02', 'periodic_SOx', 'periodic_PMx']), total_benefit
 
     def calculate_periodic_cost(self, simulation_period_output: HourlySimulationDataOfPeriod,
                                 prices: HourlyPricesData,
@@ -134,7 +141,7 @@ class PostProcessor():
     def calculate_periodic_pollute(self, simulation_period_output: HourlySimulationDataOfPeriod,
                                    emission_rate: HourlyEmmision,
                                    start_date: datetime.datetime,
-                                   end_date: datetime.datetime) -> float:
+                                   end_date: datetime.datetime) -> Dict[str, float]:
         """
         calculates the profit for a given period.
         :param simulation_period_output: an object which contains the simulation output of the current period
@@ -143,8 +150,14 @@ class PostProcessor():
         :param end_date: the end date of the period
         :return: the periodic profit
         """
-        period_pollute = emission_rate.get_emission_rate_by_range_of_date(start_date, end_date)
-        return float(np.dot(simulation_period_output.get_electricity_buying(), period_pollute))
+        # TODO: move the constants to a config file
+        # the data is presented in units of grams.
+        POLLUTION_RATES = {"CO2": 397, "SOx": 0.16, "PMx": 0.02} # units: g/kwh
+        periodic_electricity_buying = float(np.sum(simulation_period_output.get_electricity_buying()))
+        period_pollution = {"CO2": POLLUTION_RATES["CO2"] * periodic_electricity_buying,
+                            "SOx": POLLUTION_RATES["SOx"] * periodic_electricity_buying,
+                            "PMx": POLLUTION_RATES["PMx"] * periodic_electricity_buying}  # units: g
+        return period_pollution
 
     def save_output(self, periodic_data: pd.DataFrame) -> None:
         """

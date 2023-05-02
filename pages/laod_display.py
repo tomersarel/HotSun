@@ -22,8 +22,9 @@ roundbutton = {
 }
 
 energy_columns = ['Batteries', 'Solar', 'Buying', 'Selling', 'Lost', 'Storaged']
+pollution_columns = ['periodic_C02', 'periodic_SOx', 'periodic_PMx']
 colors = {"Solar": "#ffe205", "Batteries": "#d4d4d4", "Buying": "#ec4141", "Selling": "#5fbb4e", "Storaged": "#9edbf9",
-          "Lost": "gray"}
+          "Lost": "gray", 'periodic_C02': "red", 'periodic_SOx': "blue", 'periodic_PMx': "gray"}
 
 
 def generate_energy_graph_by_date_range(start, end, df, resample='H'):
@@ -164,9 +165,11 @@ def get_display(config, df_energy, df_finance):
 
     display_pollution = html.Div([dcc.Graph(id='yearlyPollutionGraph',
                                             figure=go.Figure(
-                                                data=go.Bar(x=df_finance.index, y=df_finance['periodic_pollute'],
-                                                            name='cost', marker={'color': 'red', 'line.width': 0}),
-                                                layout=go.Layout(barmode='stack', title=f"total pollution per period")),
+                                                data=[go.Bar(x=df_finance.index, y=df_finance[col], name=col,
+                                                             marker={'color': colors[col], 'line.width': 0})
+                                                      for index, col in enumerate(pollution_columns)],
+                                                layout=go.Layout(title=f"total pollution per period")),
+
                                             style={"height": "600px"})])
 
     display = html.Div([dbc.Accordion([dbc.AccordionItem(display_summary, title='Summery'),
