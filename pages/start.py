@@ -174,7 +174,7 @@ def update_config(n, period, start, end, loc, strategy):
     config['STRATEGY'] = json.loads(strategy)
     loc = loc.split("/")
     config["LOCATION"] = {"latitude": float(loc[0]), "longitude": float(loc[1]), "name": loc[2]}
-    print(config)
+
     return config
 
 

@@ -85,8 +85,6 @@ ConfigGetter.load_data()
     prevent_intial_call=True
 )
 def func(set_progress, n, config):
-    print(config)
-    print("good")
     logging.info("Preprocess - Uploading files")
     set_progress(("0", "1", "Gathering Data...", "100%"))
     demand_hourly = DemandHourlyCityData(config['LOCATION']['name'])

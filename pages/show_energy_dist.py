@@ -86,5 +86,5 @@ def change_config(val, config):
     trigger = ctx.triggered_id
     if trigger and type(val[trigger["index"]]) in [int, float]:
         config = replace_value(config, ConfigGetter.get_locations(config)[trigger["index"]].split("-")[1:], val[trigger["index"]])
-        print(config)
+
     return config

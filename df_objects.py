@@ -172,7 +172,6 @@ class SolarProductionHourlyDataPVGIS(SolarRadiationHourly):
                 writer = csv.writer(file_data, delimiter=',')
                 for line in str(response.content).split(r"\r\n")[10:-10]:
                     writer.writerow(line.split(','))
-        print(file_path)
 
         titles = ['time', 'P', 'G(i)', 'H_sun',	'T2m', 'WS10m', 'Int']
 
@@ -291,7 +290,6 @@ class HourlyPricesData(Cost):
                   "SolarPanelCapex", "SolarPanelOpex"]
 
         self.df = pd.read_csv("data/ElectricityPrices.csv", header=[0])
-        # print(self.df.columns)
         self.df['Date'] = pd.to_datetime(self.df['Date'], dayfirst=True)
 
     def get_start_and_end_hour(self, start_date: datetime.datetime,

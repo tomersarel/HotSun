@@ -106,7 +106,6 @@ class PostProcessor():
          4)
         :return:
         """
-        print(start_date, end_date)
         buying_prices = prices.get_buying_price_by_range_of_date(start_date, end_date)
         battery_capex_prices = prices.get_battery_capex_by_range_of_date(start_date, end_date)
         panel_capex_prices = prices.get_solar_panel_capex_by_range_of_date(start_date, end_date)
