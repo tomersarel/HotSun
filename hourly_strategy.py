@@ -57,6 +57,8 @@ class GreedyDailyStrategy(DailyStrategy):
                               'Lost': [0] * 24, 'Storaged': storaged,
                               "NewBatteries": [new_batteries_energy] * 24,
                               "AllBatteries": [len(state.batteries)] * 24,
+                              "AllBatteriesCapacity": [sum([battery.capacity for battery in state.batteries])] * 24,
+                              "AllBatteriesCharge": [sum([battery.charge for battery in state.batteries])] * 24,
                               "NewSolarPanels": [new_panels_power] * 24,
                               "AllSolarPanels": [len(state.solar_panels)] * 24})
         # result = pd.DataFrame({'Date': [state.current_date + datetime.timedelta(hours=i) for i in range(24)],

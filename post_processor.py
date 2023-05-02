@@ -16,10 +16,11 @@ from df_objects import HourlyPricesData, HourlyEmmision, HourlySimulationDataOfP
 
 
 class PostProcessor():
-    DATA_TYPES_AMOUNT = 3
+    DATA_TYPES_AMOUNT = 4
     PERIODIC_COST_INDEX = 0
     PERIODIC_PROFIT_INDEX = 1
     PERIODIC_POLLUTE_INDEX = 2
+    PERIODIC_WARNING = 3
 
     def __init__(self, simulation_output: pandas.DataFrame, config):
         time_string_format = config["TIME_FORMAT"]
@@ -61,12 +62,26 @@ class PostProcessor():
                 emission_rate,
                 start_date,
                 end_date)
+
+            periodic_data[period_i][self.PERIODIC_WARNING] = self.is_full_charge(simulation_period_output)
+
             total_benefit += periodic_data[period_i][self.PERIODIC_PROFIT_INDEX] - \
                              periodic_data[period_i][self.PERIODIC_COST_INDEX]
 
             set_progress((str(period_i + 1), str(self.periods_amount), "Calculate incomes and pollutes...", f"{round((period_i + 1) / self.periods_amount * 100)}%"))
 
         return pd.DataFrame(periodic_data, columns=['periodic_cost', 'periodic_profit', 'periodic_pollute']), total_benefit
+
+    def is_full_charge(self, simulation_period_output: HourlySimulationDataOfPeriod):
+        """
+        checks if the batteries are fully charged in the end of the period
+        :param simulation_period_output: an object which contains the simulation output of the current period
+        :return: True if the batteries are fully charged, False otherwise
+        """
+        capacity = np.sum(simulation_period_output.get_capacity())
+        charge = np.sum(simulation_period_output.get_charge())
+
+        return charge / capacity >= 0.95
 
     def calculate_periodic_cost(self, simulation_period_output: HourlySimulationDataOfPeriod,
                                 prices: HourlyPricesData,
