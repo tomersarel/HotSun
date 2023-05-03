@@ -17,5 +17,4 @@
     "peakpower": ["kg","temp10"],
     "loss": ["kg","temp11"]
   }
-
 }

@@ -83,7 +83,7 @@ def dict_to_dataframe(df):
 def calculus(config, df_energy):
     # calculate solar energy percentage
     df_energy['Total'] = df_energy['Solar'] + df_energy['Buying'] + df_energy['Batteries']
-    
+
     total_energy = df_energy['Total'].sum()
     solar_energy = df_energy['Solar'].sum()
     solar_percentage = round((solar_energy / total_energy) * 100, 2)
@@ -128,10 +128,10 @@ def grade(calculus_results):
         green_g += 25
     else:
         green_g += 30
-    impact =  calculus_results['impact']
+    impact = calculus_results['impact']
     if (calculus_results['impact'] > 0.0001):
         green_g += 2
-    elif impact > 0.001 :
+    elif impact > 0.001:
         green_g += 4
     elif impact > 0.01:
         green_g += 6
@@ -161,15 +161,46 @@ def grade(calculus_results):
     return green_g
 
 
+def get_score_display(score, label):
+    return html.Div([html.Div(dcc.Graph(
+        figure=go.Figure(
+            data=[go.Pie(labels=['', ''], values=[100 - score, score],
+                         marker=dict(
+                             colors=['#FFFFFF', ['#FF0000', '#FFA500', '#00FF00'][score // 34]]
+                         ),
+                         hoverinfo='none',
+                         textinfo='none',
+                         hole=.65,
+                         showlegend=False,
+                         sort=False
+                         )],
+            layout=go.Layout(annotations=[go.layout.Annotation(text=f"{score}%", showarrow=False,
+                                                               font=dict(size=35, color='black'))],
+                             margin=dict(t=0, b=0))
+        ),
+        config={
+            "scrollZoom": False,
+            "doubleClick": False,
+            "displayModeBar": False,
+            "showTips": False
+        },
+        style={"height": "200px", "width": "100%", "align-items": "center"}
+        , className="d-flex flex-wrap justify-content-center"
+    )), html.H4(label)], style={"text-align": "center"})
+
+
 def get_display(config, df_energy, df_finance):
     results = calculus(config, df_energy)
-    green_g = grade(results)
-    # create display summary
+    grades = [grade(results), 56, 89]
     display_summery = html.Div([
+        dbc.Row([dbc.Col(get_score_display(score, label), width=4, align="center") for score, label in
+                 zip(grades, ['Environmental Score', 'Overall Score', 'Financial Score'])],
+                className="d-flex flex-wrap justify-content-center", style={"margin-bottom": "20px"}),
         html.Div([
             dbc.Card([
                 dbc.CardBody([
-                    html.H1(f"{results['solar_percentage']}%", className="card-title", style={"text-align": "center", "font-size": 48}),
+                    html.H1(f"{results['solar_percentage']}%", className="card-title",
+                            style={"text-align": "center", "font-size": 48}),
                     html.H4("Solar Energy", className="card-title", style={"text-align": "center"}),
                     html.P(
                         "Percentage of solar energy out of total energy consumption.",
@@ -179,7 +210,8 @@ def get_display(config, df_energy, df_finance):
             ], style={"width": "18rem"}, className="mx-2 my-2"),
             dbc.Card([
                 dbc.CardBody([
-                    html.H1(f"{results['co2_saved']} kg", className="card-title", style={"text-align": "center", "font-size": 48}),
+                    html.H1(f"{results['co2_saved']} kg", className="card-title",
+                            style={"text-align": "center", "font-size": 48}),
                     html.H4("Pollution Saved", className="card-title", style={"text-align": "center"}),
                     html.P(
                         "Amount of CO2 pollution saved by producing energy by using solar panels.",
@@ -189,7 +221,8 @@ def get_display(config, df_energy, df_finance):
             ], style={"width": "18rem"}, className="mx-2 my-2"),
             dbc.Card([
                 dbc.CardBody([
-                    html.H1(f"{results['savings']}$", className="card-title", style={"text-align": "center", "font-size": 48}),
+                    html.H1(f"{results['savings']}$", className="card-title",
+                            style={"text-align": "center", "font-size": 48}),
                     html.H4("Finance", className="card-title", style={"text-align": "center"}),
                     html.P(
                         ('this is how much you have saved by a avarage hour'),
@@ -199,7 +232,8 @@ def get_display(config, df_energy, df_finance):
             ], style={"width": "18rem"}, className="mx-2 my-2"),
             dbc.Card([
                 dbc.CardBody([
-                    html.H1(f"{results['impact']}%", className="card-title", style={"text-align": "center", "font-size": 48}),
+                    html.H1(f"{results['impact']}%", className="card-title",
+                            style={"text-align": "center", "font-size": 48}),
                     html.H4("Climate Change", className="card-title", style={"text-align": "center"}),
                     html.P(
                         "this is your Percenteg of the israel production power of solar energy",
@@ -209,22 +243,12 @@ def get_display(config, df_energy, df_finance):
             ], style={"width": "18rem"}, className="mx-2 my-2"),
             dbc.Card([
                 dbc.CardBody([
-                    html.H1(f"{results['impact_increase']}X", className="card-title", style={"text-align": "center", "font-size": 48}),
-                    html.H4("incrise in impact", className="card-title", style={"text-align": "center"}),
-                    html.P(
-                        ('this is how much will be your procenteg out of tatal israel produs power of solar energy will multiplay if you increase by 5% your prous every year for 10 years '),
-                        className="card-text",
-                    )
-                ])
-            ], style={"width": "18rem"}, className="mx-2 my-2"),
-            dbc.Card([
-                dbc.CardBody([
-                    html.H1(f"{green_g}/100",  className="card-title",
+                    html.H1(f"{results['impact_increase']}X", className="card-title",
                             style={"text-align": "center", "font-size": 48}),
                     html.H4("incrise in impact", className="card-title", style={"text-align": "center"}),
                     html.P(
                         (
-                            'this is your green grade '),
+                            'this is how much will be your procenteg out of tatal israel produs power of solar energy will multiplay if you increase by 5% your prous every year for 10 years '),
                         className="card-text",
                     )
                 ])
@@ -279,6 +303,7 @@ def get_display(config, df_energy, df_finance):
                                   "border-radius": "10px"})
     return display
 
+
 def create_list(units_dict, units, explain):
     """
     Create a list of all the values by order from recursive dict
@@ -304,11 +329,11 @@ def get_parameters(config, units, explain, id=itertools.count(), loc=""):
                     result.append(dbc.Row([
                         dbc.Col([f"Period {int(parameter) + 1}:"], width="auto"),
                         dbc.Col(
-                        dbc.Input(
-                            id={'type': 'config-input', 'index': id.__next__()},
-                            value=f"{value}",
-                            type="number"
-                        ), width=True)
+                            dbc.Input(
+                                id={'type': 'config-input', 'index': id.__next__()},
+                                value=f"{value}",
+                                type="number"
+                            ), width=True)
                     ], className="my-2", align="center"))
                 else:
                     result.append(dbc.Row([
@@ -346,4 +371,3 @@ def get_parameter_wrapper(config):
         units_data = json.load(f)
     units, explain = create_list(units_data, [], [])
     return get_parameters(config, units, explain)
-
