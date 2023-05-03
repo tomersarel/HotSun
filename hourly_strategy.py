@@ -51,14 +51,21 @@ class GreedyDailyStrategy(DailyStrategy):
 
         new_batteries_energy = state.batteries[-1].capacity
         new_panels_power = state.solar_panels[-1].amount * state.solar_panels[-1].max_power
-
+        
+        
+        total_charge = 0
+        total_capacity = 0
+        for battery in state.batteries:
+            total_charge += battery.current_energy
+            total_capacity += battery.capacity
+            
         result = pd.DataFrame({'Date': [state.current_date + datetime.timedelta(hours=i) for i in range(24)],
                               'Batteries': batteries, 'Solar': solar, 'Buying': buying, 'Selling': selling,
                               'Lost': [0] * 24, 'Storaged': storaged,
                               "NewBatteries": [new_batteries_energy] * 24,
                               "AllBatteries": [len(state.batteries)] * 24,
-                              "AllBatteriesCapacity": [sum([battery.capacity for battery in state.batteries])] * 24,
-                              "AllBatteriesCharge": [sum([battery.current_energy for battery in state.batteries])] * 24,
+                              "AllBatteriesCapacity": [total_capacity] * 24,
+                              "AllBatteriesCharge": [total_charge] * 24,
                               "NewSolarPanels": [new_panels_power] * 24,
                               "AllSolarPanels": [len(state.solar_panels)] * 24})
         # result = pd.DataFrame({'Date': [state.current_date + datetime.timedelta(hours=i) for i in range(24)],
