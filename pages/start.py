@@ -73,7 +73,7 @@ def get_screen(i, period, start, end, location, startegy):
                                      dbc.Alert(html.Div(['Drag and Drop or ',
                                                          html.B('Select Files')],
                                                         style={"vertical-align": "center"}), id="msg",
-                                               color="light"), style={"height": "100%"})
+                                               color="light"), style={"height": "100%", })
                                  ,
                                  style={
                                      'width': '100%',
@@ -89,7 +89,7 @@ def get_screen(i, period, start, end, location, startegy):
                          dbc.Row(dbc.Row([dbc.Col(dcc.Graph('myFig'), width=6), dbc.Col(dcc.Graph('myFig2'), width=6)]),
                                  style={"display": "none"}, id="graph-id"),
                          ],
-                        style={"padding": "20px"})
+                        style={})
     if i == 4:
         location = location.split("/")
         return html.Div([dbc.Row([dbc.Col(html.H2("Run the simulation"))]),
@@ -236,7 +236,9 @@ def update_output(n, length, start, end):
     Output('msg', 'children'),
     Output('msg', 'color'),
     Output('myFig', 'figure'),
+    Output('myFig', 'config'),
     Output('myFig2', 'figure'),
+    Output('myFig2', 'config'),
     Output('graph-id', 'style'),
     Input('upload-data', 'contents'),
     State('upload-data', 'filename'),
@@ -251,7 +253,7 @@ def update_output(content, file_name, current, start, end, length):
     y = [[], []]
     fig = 0
     fig2 = 0
-    style = {"display": "none"}
+    style = {"display": "none", "style":"80%"}
     if content is not None:
         try:
             if file_name.split('.')[1] != 'csv':
@@ -271,6 +273,7 @@ def update_output(content, file_name, current, start, end, length):
             x = df["period"]
             y = [df["solar_panel_purchased"], df["batteries_purchased"]]
             style["display"] = "block"
+            style["height"] = "80%"
         except Exception as e:
             result[1], result[2] = str(e) + ". Try again!", "danger"
             result[0] = None
@@ -279,31 +282,42 @@ def update_output(content, file_name, current, start, end, length):
 
     fig = go.Figure(
         data=[
-            {'x': x, 'y': y[0], 'type': 'bar'},
+            {'x': x, 'y': y[0], 'type': 'scatter'},
         ],
         layout=go.Layout(
-            plot_bgcolor="#fff",
-            paper_bgcolor="#fff",
-            xaxis={"title": "period"},
-            yaxis={"title": "solar_panel_purchased"}
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            xaxis={"title": "period",'rangemode': 'nonnegative'},
+            yaxis={'rangemode': 'nonnegative'}
         )
     )
 
     fig2 = go.Figure(
         data=[
-            {'x': x, 'y': y[1], 'type': 'bar'}
+            {'x': x, 'y': y[1], 'type': 'scatter'}
         ],
         layout=go.Layout(
-            plot_bgcolor="#FFF",
-            paper_bgcolor="#fff",
-            xaxis={"title": "period"},
-            yaxis={"title": "batteries_purchased"}
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            xaxis={"title": "period",'rangemode': 'nonnegative'},
+            yaxis={'rangemode': 'nonnegative'}
         )
     )
+
+    fig.update_xaxes(showgrid=False)
+    fig.update_yaxes(showgrid=False)
+
+    fig2.update_xaxes(showgrid=False)
+    fig2.update_yaxes(showgrid=False)
+    
+    fig.update_layout(title=go.layout.Title(text="solar panel purchased"))
+    fig2.update_layout(title=go.layout.Title(text="batteries purchased"))
+
+    config = {'staticPlot': True}
 
     if result[0] is None:
         period_amount = calculate_periods_amount(start, end, length)
         result[0] = pandas.DataFrame(
             data={'period': [i + 1 for i in range(period_amount)], 'solar_panel_purchased': [10000] * period_amount,
                   'batteries_purchased': [200] * period_amount})
-    return result[0][['solar_panel_purchased', 'batteries_purchased']].to_json(), result[1], result[2], fig, fig2, style
+    return result[0][['solar_panel_purchased', 'batteries_purchased']].to_json(), result[1], result[2], fig, config,fig2, config,style
