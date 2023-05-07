@@ -565,10 +565,10 @@ class HourlySimulationDataOfPeriod(PeriodsSimulation):
         return self.df["Date"].iloc[-1].to_pydatetime()
 
     def get_capacity(self):
-        return [item for item in self.df["BatteriesCapacity"].to_numpy()]
+        return [item for item in self.df["AllBatteriesCapacity"].to_numpy()]
 
     def get_charge(self):
-        return [item for item in self.df["BatteriesCharge"].to_numpy()]
+        return [item for item in self.df["AllBatteriesCharge"].to_numpy()]
 
 def get_town_loc_by_name():
     df = pd.read_csv("data/cities.csv", header=[0])
