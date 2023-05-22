@@ -1,20 +1,20 @@
 {
   "battery":
   {
-    "capacity": ["kwh","temp1"],
-    "lifetime": ["yr","tem2"],
-    "charge_rate": ["kwh/yr","temp2"],
-    "efficiency": ["","temp3"],
-    "decay_rate": ["","temp4"]
+    "capacity": ["kwh","Maximum storage of the one battery"],
+    "lifetime": ["yr","Length of one battery functionality"],
+    "charge_rate": ["kwh/h","Maximum amount of charged energy per hour"],
+    "efficiency": ["","Effiency of charging and discharging"],
+    "decay_rate": ["","Decay rate of the battery efficiency"]
   },
   "solar":
   {
-    "lifetime": ["yr","temp5"],
-    "efficiency": ["","temp6"],
-    "decay_rate": ["","temp7"],
-    "area": ["m^2","temp8"],
-    "max_power": ["kwh","temp9"],
-    "peakpower": ["kwh","temp10"],
-    "loss": ["","temp11"]
+    "lifetime": ["yr","Length of one battery functionality"],
+    "efficiency": ["","Effiency of the solar panel"],
+    "decay_rate": ["","Decay rate of the solar panel efficiency"],
+    "area": ["m^2","Area of one solar panel"],
+    "max_power": ["kwh","Maximum power that one solar panel can produce"],
+    "peakpower": ["kwh","Power that one solar panel produce in peak hours"],
+    "loss": ["","Energy loss of solar panel"]
   }
 }
