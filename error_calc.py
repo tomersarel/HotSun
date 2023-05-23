@@ -67,33 +67,61 @@ d = pd.read_csv("Sumenergy.csv")
 
 
 def calaParameterError(name, prercent, amount):
-    name_set = np.linspace(ConfigGetter["battery"][name]*(1 - prercent), ConfigGetter["battery"][name]*(1+prercent),amount)
+    name_set = np.linspace(ConfigGetter["battery"][name]*((100 - prercent)/100), ConfigGetter["battery"][name]*((100 + prercent)/100), amount)
     arr = []
     for i in name_set:
         battery_change = ConfigGetter["battery"]
         battery_change[name] = i
-        arr.append(manager.run_simulator(a))
+        tmp = manager.run_simulator(a)
+        tmp.drop('Date', axis='columns', inplace=True)
+        arr.append(tmp)
 
     simulation_arr = np.stack([df.to_numpy() for df in arr])
+
+    # date_columns = simulation_arr[1]['Date']
 
     minimum_values = np.min(simulation_arr, axis=0)
     maximum_values = np.max(simulation_arr, axis=0)
     minimum_df = pd.DataFrame(minimum_values, columns=arr[0].columns)
     maximum_df = pd.DataFrame(maximum_values, columns=arr[0].columns)
-    date_max = maximum_values['Date']
-    maximum_values.drop('Date', axis='columns', inplace=True)
-    minimum_values.drop('Date', axis='columns', inplace=True)
-    total_precent = (maximum_values - minimum_values) * np.reciprocal(d.to_numpy(), where= d.to_numpy()!=0) * 100
-    up_precent = (maximum_values - d) * np.reciprocal(d.to_numpy(), where= d.to_numpy()!=0) * 100
-    down_precent = (d - minimum_values) * np.reciprocal(d.to_numpy(), where= d.to_numpy()!=0) * 100
+    # maximum_values.delete('Date', axis='columns', inplace=True)
+    # np.delete(maximum_values, 'Date', axis=None)
+    # minimum_values.delete('Date', axis='columns', inplace=True)
+    # np.delete(minimum_values, 'Date', axis=None)
+
+    total_precent = (maximum_values - minimum_values) * np.reciprocal(d.to_numpy(), where=d.to_numpy() != 0) * 100
+    up_precent = (maximum_values - d) * np.reciprocal(d.to_numpy(), where=d.to_numpy() != 0) * 100
+    down_precent = (d - minimum_values) * np.reciprocal(d.to_numpy(), where=d.to_numpy() != 0) * 100
     frames = [total_precent, up_precent, down_precent]
     final_precent = pd.concat(frames)
-    maximum_values['Date'] = date_max
-    minimum_values['Date'] = date_max
-    final_precent['Date'] = date_max
+    # maximum_values['Date'] = date_columns
+    # minimum_values['Date'] = date_columns
+    # final_precent['Date'] = date_columns
     return maximum_df, minimum_df, final_precent
 
+a, b, c = calaParameterError("capacity", 5, 5)
+a.to_csv('maximum_capacity.csv')
+b.to_csv('minimum_capacity.csv')
+c.to_csv('totalprecent_capacity.csv')
+
+
+a, b, c = calaParameterError("lifetime", 5, 5)
+a.to_csv('maximum_lifetime.csv')
+b.to_csv('minimum_lifetime.csv')
+c.to_csv('totalprecent_lifetime.csv')
+
+a, b, c = calaParameterError("charge_rate", 5, 5)
+a.to_csv('maximum_charge_rate.csv')
+b.to_csv('minimum_charge_rate.csv')
+c.to_csv('totalprecent_charge_rate.csv')
+
+a, b, c = calaParameterError("efficiency", 5, 5)
+a.to_csv('maximum_efficiency.csv')
+b.to_csv('minimum_efficiency.csv')
+c.to_csv('totalprecent_efficiency.csv')
+
 a, b, c = calaParameterError("decay_rate", 5, 5)
-a.to_csv('maximum.csv')
-b.to_csv('minimum.csv')
-c.to_csv('totalprecent')
+a.to_csv('maximum_decay_rate.csv')
+b.to_csv('minimum_decay_rate.csv')
+c.to_csv('totalprecent_decay_rate.csv')
+
