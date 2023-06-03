@@ -23,7 +23,8 @@ roundbutton = {
 }
 
 energy_columns = ['Batteries', 'Solar', 'Buying', 'Selling', 'Lost', 'Storaged']
-pollution_columns = ['periodic_C02', 'periodic_SOx', 'periodic_PMx']
+pollution_columns_greenhouse_gases = ['periodic_C02']
+pollution_columns_other = ['periodic_SOx', 'periodic_PMx']
 colors = {"Solar": "#ffe205", "Batteries": "#d4d4d4", "Buying": "#ec4141", "Selling": "#5fbb4e", "Storaged": "#9edbf9",
           "Lost": "gray", 'periodic_C02': "red", 'periodic_SOx': "blue", 'periodic_PMx': "gray"}
 
@@ -279,7 +280,8 @@ def get_display(config, df_energy, df_finance):
                                           figure=go.Figure(
                                               data=go.Bar(x=df_finance.index, y=df_finance['periodic_profit'],
                                                           name='cost', marker={'color': 'green', 'line.width': 0}),
-                                              layout=go.Layout(barmode='stack', title=f"total profit per period")),
+                                              layout=go.Layout(barmode='stack',
+                                                               title=f"total profit per period")),
                                           )
                                 ])
 
@@ -287,10 +289,19 @@ def get_display(config, df_energy, df_finance):
                                             figure=go.Figure(
                                                 data=[go.Bar(x=df_finance.index, y=df_finance[col], name=col,
                                                              marker={'color': colors[col], 'line.width': 0})
-                                                      for index, col in enumerate(pollution_columns)],
-                                                layout=go.Layout(title=f"total pollution per period")),
+                                                      for index, col in enumerate(pollution_columns_greenhouse_gases)],
+                                                layout=go.Layout(title=f"greenhouse gases pollution per period")),
 
-                                            style={"height": "600px"})])
+                                            style={"height": "600px"}),
+                                  dcc.Graph(id='yearlyPollutionGraph',
+                                            figure=go.Figure(
+                                                data=[go.Bar(x=df_finance.index, y=df_finance[col], name=col,
+                                                             marker={'color': colors[col], 'line.width': 0})
+                                                      for index, col in enumerate(pollution_columns_other)],
+                                                layout=go.Layout(title=f"other gases pollution per period")),
+
+                                            style={"height": "600px"})
+                                  ])
 
     display = html.Div([dbc.Accordion([dbc.AccordionItem(display_summery, title='Summery'),
                                        dbc.AccordionItem(display_energy, title='Energy'),
