@@ -13,8 +13,11 @@ logging.info("Start application")
 
 cache = diskcache.Cache("./cache")
 background_callback_manager = DiskcacheLongCallbackManager(cache)
-application = Dash("Hot Sun", use_pages=True, external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.BOOTSTRAP],
-                   suppress_callback_exceptions=True, background_callback_manager=background_callback_manager)
+application = Dash("Hot Sun", use_pages=True,
+                   external_stylesheets=[dbc.themes.BOOTSTRAP,
+                                         dbc.icons.BOOTSTRAP,
+                                         'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css'],
+                   suppress_callback_exceptions=True, background_callback_manager=background_callback_manager,)
 
 navbar = dbc.NavbarSimple(
     children=[
@@ -100,7 +103,7 @@ def func(set_progress, n, config):
     logging.info("Preprocess - Files uploaded successfully")
 
     logging.info("Process - Start simulation")
-    manager = Manager(demand_hourly, [period_strategy.PeriodStrategy(10000, 100) for i in range(33)], [],
+    manager = Manager(demand_hourly, [],
                       solar_rad_hourly,
                       hourly_strategy.GreedyDailyStrategy(), config)
     output_energy = manager.run_simulator(set_progress)

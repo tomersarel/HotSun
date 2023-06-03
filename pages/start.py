@@ -263,8 +263,8 @@ def update_output(content, file_name, current, start, end, length):
                     or not numpy.array_equal(df.columns.to_numpy(),
                                              numpy.array(['period', 'solar_panel_purchased', 'batteries_purchased'])) \
                     or df.count()[0] != calculate_periods_amount(start, end, length) \
-                    or not all(str(x).isnumeric() and float(x).is_integer() for x in df['solar_panel_purchased']) \
-                    or not all(str(x).isnumeric() and float(x).is_integer() for x in df['batteries_purchased']):
+                    or not all(str(x).isnumeric() for x in df['solar_panel_purchased']) \
+                    or not all(str(x).isnumeric() for x in df['batteries_purchased']):
                 raise Exception("Bad file format")
             result[1], result[2] = "Success!", "success"
             result[0] = df
@@ -304,6 +304,6 @@ def update_output(content, file_name, current, start, end, length):
     if result[0] is None:
         period_amount = calculate_periods_amount(start, end, length)
         result[0] = pandas.DataFrame(
-            data={'period': [i + 1 for i in range(period_amount)], 'solar_panel_purchased': [10000] * period_amount,
-                  'batteries_purchased': [200] * period_amount})
+            data={'period': [i + 1 for i in range(period_amount)], 'solar_panel_purchased': [1300] * period_amount,
+                  'batteries_purchased': [100000] * period_amount})
     return result[0][['solar_panel_purchased', 'batteries_purchased']].to_json(), result[1], result[2], fig, fig2, style

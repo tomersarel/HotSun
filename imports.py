@@ -14,3 +14,4 @@ import dash
 from dash.long_callback import DiskcacheLongCallbackManager
 import dash_bootstrap_components as dbc
 import diskcache
+from dash_iconify import DashIconify

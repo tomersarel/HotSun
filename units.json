@@ -16,5 +16,11 @@
     "max_power": ["kwh","Maximum power that one solar panel can produce"],
     "peakpower": ["kwh","Power that one solar panel produce in peak hours"],
     "loss": ["","Energy loss of solar panel"]
-  }
+  },
+  "pollution_rates":
+    {
+        "CO2": ["gr/kWh","CO2 emission rate"],
+        "SOx": ["gr/kWh","SOx emission rate"],
+        "PMx": ["gr/kWh","PMx emission rate"]
+    }
 }

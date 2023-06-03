@@ -29,6 +29,25 @@ colors = {"Solar": "#ffe205", "Batteries": "#d4d4d4", "Buying": "#ec4141", "Sell
           "Lost": "gray", 'periodic_C02': "red", 'periodic_SOx': "blue", 'periodic_PMx': "gray"}
 
 
+def get_figure(data, title_label, x_axis_label, y_axis_label, bar_mode='stack', bargap=None):
+    """
+    The function gets a dataframe and returns a figure
+    """
+    return go.Figure(data=data,
+                     layout=go.Layout(barmode=bar_mode,
+                                      title={
+                                          'text': title_label,
+                                          'font': {'size': 20},
+                                          'x': 0.5
+                                      },
+                                      bargap=bargap,
+                                      xaxis={"title": x_axis_label,
+                                             "showspikes": False,
+                                             },
+                                      yaxis={"title": y_axis_label}),
+                     )
+
+
 def generate_energy_graph_by_date_range(start, end, df, resample='H'):
     """
     generate energy graph by Datetime.Datetime range and resample it.
@@ -64,6 +83,49 @@ def generate_day_enr_graph(date, df):
                                                df, 'H')
 
 
+def generate_yaerly_precentages_graph(df_energy):
+    yearly = df_energy.resample("Y", convention="start").sum()
+    yearly['percentages'] = (yearly['Solar'] + yearly['Batteries']) / (
+            yearly['Solar'] + yearly['Batteries'] + yearly['Buying']) * 100
+    yerly_figure = get_figure(
+        go.Scatter(x=yearly.index, y=yearly['percentages'], mode='lines', name='Solar Energy Percentage'),
+        "Yearly Solar Energy Percentage",
+        "Year",
+        "Solar Energy Percentage [%]")
+    yerly_figure.update_layout(shapes=[
+        go.layout.Shape(type='line', y0=95, x0=min(yearly.index), x1=max(yearly.index), y1=95,
+                        line=dict(color='#808080', dash='dash')),
+        go.layout.Shape(type='line', y0=50, x0=min(yearly.index), x1=max(yearly.index), y1=50,
+                        line=dict(color='#979797', dash='dash')),
+        go.layout.Shape(type='line', y0=30, x0=min(yearly.index), x1=max(yearly.index), y1=30,
+                        line=dict(color='#AEAEAE', dash='dash'))
+    ],
+        yaxis=dict(range=[0, 100]),
+        annotations=[
+            go.layout.Annotation(
+                x=yearly.index.min(), y=90, xanchor="left",
+                text='NZO national goal for 2050',
+                showarrow=False,
+                font=dict(size=12, color='#808080')
+            ),
+            go.layout.Annotation(
+                x=yearly.index.min(), y=25, xanchor="left",
+                text='Israel national goal for 2050',
+                showarrow=False,
+                font=dict(size=12, color='#AEAEAE')
+            ),
+            go.layout.Annotation(
+                x=yearly.index.min(), y=45, xanchor="left",
+                text='Tel-Aviv goal for 2050',
+                showarrow=False,
+                font=dict(size=12, color='#979797')
+            )
+        ]
+    )
+
+    return yerly_figure
+
+
 def dict_to_dataframe(df):
     """
     this function create data frame from dict
@@ -81,85 +143,42 @@ def dict_to_dataframe(df):
     return df
 
 
-def calculus(config, df_energy):
-    # calculate solar energy percentage
+def calculus(config, df_energy, df_finance):
+    # calculate solar energy percentage in last year
     df_energy['Total'] = df_energy['Solar'] + df_energy['Buying'] + df_energy['Batteries']
+    last_year = df_energy[df_energy["Date"] >= df_energy["Date"].max() - pd.DateOffset(years=1)]
+    total_energy = last_year['Total'].sum()
+    green_energy_last_year = last_year['Solar'].sum() + last_year['Batteries'].sum()
+    solar_percentage = round((green_energy_last_year / total_energy) * 100)
 
-    total_energy = df_energy['Total'].sum()
-    solar_energy = df_energy['Solar'].sum()
-    solar_percentage = round((solar_energy / total_energy) * 100, 2)
-
+    green_energy = df_energy['Solar'].sum() + df_energy['Batteries'].sum()
     # calculate CO2 pollution saved
-    co2_saved = round((solar_energy * 0.0004), 2)
+    co2_saved = round(green_energy * config["pollution_rates"]["CO2"] / 1e6)
 
-    solar_energy_production = df_energy['Solar'].mean()
-    electricity_rate = 0.068  # Replace 0.15 with your electricity rate in dollars per kWh
-    israel_produs_power_solar = 1438000
-    impact = (df_energy['Solar'].mean() / israel_produs_power_solar).__round__(5)
-    savings = (solar_energy_production * electricity_rate).__round__(1)
-    # Calculate the impact increase
-    years_in_period = 10
-    zion = sum((df_energy['Solar'].mean() * (1 + 0.05) ** np.arange(0,
-                                                                    years_in_period)) / israel_produs_power_solar).__round__(
-        5)
-    impact_increase = (zion / impact).__round__(0)
+    savings = round(df_finance['periodic_didnt_buy'].sum())
 
     # create a dictionary with all the calculated values
     results = {
-        'solar_percentage': solar_percentage,
-        'co2_saved': co2_saved,
-        'savings': savings,
-        'impact': impact,
-        'impact_increase': impact_increase,
-
+        'solar_percentage': [solar_percentage, "%", "Solar Energy",
+                             "Percentage of solar energy out of the total energy consumption in the last year.",
+                             "ic:outline-solar-power", "#808080"],
+        'co2_saved': [co2_saved, "t", "Pollution Saved",
+                      "Total amount of CO2 pollution saved by producing energy by using solar panels.",
+                      "mdi:molecule-co2", "#808080"],
+        'savings': [savings, "$", "Savings",
+                    "Amount of money saved by by using energy produced by the solar panels instead of buying it.",
+                    "fluent-mdl2:savings", "#808080"]
     }
 
     return results
 
 
-def grade(calculus_results):
-    green_g = 0
-    solar_percentage = calculus_results['solar_percentage']
+def grade(calculus_results, df_energy, df_finance):
+    profit = df_finance['periodic_didnt_buy'].sum() + df_finance['periodic_profit'].sum() - df_finance['periodic_cost'].sum()
+    financial = round((np.arctan(np.sign(profit) * np.log10(np.abs(profit))) / np.pi + 1 / 2) * 100)
 
-    if solar_percentage < 0:
-        green_g += 5
-    elif 10 <= solar_percentage < 20:
-        green_g += 15
-    elif 30 <= solar_percentage < 45:
-        green_g += 25
-    else:
-        green_g += 30
-    impact = calculus_results['impact']
-    if (calculus_results['impact'] > 0.0001):
-        green_g += 2
-    elif impact > 0.001:
-        green_g += 4
-    elif impact > 0.01:
-        green_g += 6
-    elif impact > 0.1:
-        green_g += 8
-    elif impact > 0.5:
-        green_g += 10
-        co2_saved = calculus_results['co2_saved']
-        if co2_saved < 100000:
-            green_g += 5
-        elif 100000 <= co2_saved < 500000:
-            green_g += 10
-        elif 500000 <= co2_saved < 1000000:
-            green_g += 15
-        else:
-            green_g += 20
-        savings_per_hour = calculus_results['savings']
-        if savings_per_hour < 100:
-            green_g += 10
-        elif 10 <= savings_per_hour < 200:
-            green_g += 20
-        elif 30 <= savings_per_hour < 300:
-            green_g += 30
-        else:
-            green_g += 40
-
-    return green_g
+    enviromental = calculus_results['solar_percentage'][0]
+    return [enviromental, round((enviromental + financial) / 2), financial]
 
 
 def get_score_display(score, label):
@@ -190,74 +209,41 @@ def get_score_display(score, label):
     )), html.H4(label)], style={"text-align": "center"})
 
 
+def get_card_display(value, unit, title, explanation, icon, color="black"):
+    return dbc.Card([
+        dbc.CardBody([
+            html.H4(html.I(className=icon), className="card-title",
+                    style={"text-align": "center", "font-size": 108, "color": color}),
+            html.Div(DashIconify(icon=icon, color=color, width=108, height=108,
+                                 style={"display": "flex", "justify-content": "center"}, className="card-title"),
+                     className="d-flex align-items-center justify-content-center"),
+            html.H1(f"{value}{unit}", className="card-title", style={"text-align": "center", "font-size": 48}),
+            html.H4(title, className="card-title", style={"text-align": "center"}),
+            html.P(explanation, className="card-text")
+        ])], style={"width": "18rem"}, className="mx-2 my-2")
+
+
 def get_display(config, df_energy, df_finance):
-    results = calculus(config, df_energy)
-    grades = [grade(results), 56, 89]
+    results = calculus(config, df_energy, df_finance)
+    grades = grade(results, df_energy, df_finance)
+    df_energy = dict_to_dataframe(df_energy)
+
     display_summery = html.Div([
-        dbc.Row([dbc.Col(get_score_display(score, label), width=4, align="center") for score, label in
+        dbc.Row([dbc.Col(get_score_display(score, label), width=12 // len(grades), align="center") for score, label in
                  zip(grades, ['Environmental Score', 'Overall Score', 'Financial Score'])],
                 className="d-flex flex-wrap justify-content-center", style={"margin-bottom": "20px"}),
-        html.Div([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H1(f"{results['solar_percentage']}%", className="card-title",
-                            style={"text-align": "center", "font-size": 48}),
-                    html.H4("Solar Energy", className="card-title", style={"text-align": "center"}),
-                    html.P(
-                        "Percentage of solar energy out of total energy consumption.",
-                        className="card-text",
-                    )
-                ])
-            ], style={"width": "18rem"}, className="mx-2 my-2"),
-            dbc.Card([
-                dbc.CardBody([
-                    html.H1(f"{results['co2_saved']} kg", className="card-title",
-                            style={"text-align": "center", "font-size": 48}),
-                    html.H4("Pollution Saved", className="card-title", style={"text-align": "center"}),
-                    html.P(
-                        "Amount of CO2 pollution saved by producing energy by using solar panels.",
-                        className="card-text",
-                    )
-                ])
-            ], style={"width": "18rem"}, className="mx-2 my-2"),
-            dbc.Card([
-                dbc.CardBody([
-                    html.H1(f"{results['savings']}$", className="card-title",
-                            style={"text-align": "center", "font-size": 48}),
-                    html.H4("Finance", className="card-title", style={"text-align": "center"}),
-                    html.P(
-                        ('this is how much you have saved by a avarage hour'),
-                        className="card-text",
-                    )
-                ])
-            ], style={"width": "18rem"}, className="mx-2 my-2"),
-            dbc.Card([
-                dbc.CardBody([
-                    html.H1(f"{results['impact']}%", className="card-title",
-                            style={"text-align": "center", "font-size": 48}),
-                    html.H4("Climate Change", className="card-title", style={"text-align": "center"}),
-                    html.P(
-                        "this is your Percenteg of the israel production power of solar energy",
-                        className="card-text",
-                    )
-                ])
-            ], style={"width": "18rem"}, className="mx-2 my-2"),
-            dbc.Card([
-                dbc.CardBody([
-                    html.H1(f"{results['impact_increase']}X", className="card-title",
-                            style={"text-align": "center", "font-size": 48}),
-                    html.H4("incrise in impact", className="card-title", style={"text-align": "center"}),
-                    html.P(
-                        (
-                            'this is how much will be your procenteg out of tatal israel produs power of solar energy will multiplay if you increase by 5% your prous every year for 10 years '),
-                        className="card-text",
-                    )
-                ])
-            ], style={"width": "18rem"}, className="mx-2 my-2"),
-        ], className="d-flex flex-wrap justify-content-center"),
-        dcc.Graph(figure=go.Figure(
-            data=generate_year_enr_graph(config['START_YEAR'], config['END_YEAR'], dict_to_dataframe(df_energy), 'Y'),
-            layout=go.Layout(barmode='stack', title=f"yearly energy distribution")))
+
+        html.Div([get_card_display(*params) for params in results.values()
+                  ], className="d-flex flex-wrap justify-content-center"),
+
+        dcc.Graph(figure=get_figure(
+            generate_year_enr_graph(config['START_YEAR'], config['END_YEAR'], df_energy, 'Y'),
+            "Yearly total Energy Distribution",
+            "Year",
+            "Energy [kWh]"),
+            config={"displayModeBar": False}),
+        dcc.Graph(figure=generate_yaerly_precentages_graph(df_energy),
+                  config={"displayModeBar": False})
     ])
     display_energy = html.Div([dcc.Slider(id="period_slider",
                                           min=config["START_YEAR"],
@@ -266,41 +252,50 @@ def get_display(config, df_energy, df_finance):
                                           marks={i: '{}'.format(i) for i in
                                                  range(config["START_YEAR"], config["END_YEAR"] - 1)},
                                           value=config["START_YEAR"]),
-                               dcc.Graph(id='yearlyEnergyGraph'),
-                               dcc.Graph(id='dailyGraph', style={"display": "None"})
+                               dcc.Graph(id='yearlyEnergyGraph', config={"displayModeBar": False}),
+                               dcc.Graph(id='dailyGraph', style={"display": "None"}, config={"displayModeBar": False})
                                ])
     df_finance = pd.DataFrame(df_finance)
     display_finance = html.Div([dcc.Graph(id='yearlyCostGraph',
-                                          figure=go.Figure(
-                                              data=go.Bar(x=df_finance.index, y=df_finance['periodic_cost'],
-                                                          name='cost', marker={'color': 'green', 'line.width': 0}),
-                                              layout=go.Layout(barmode='stack', title=f"total cost per period")),
-                                          ),
+                                          figure=get_figure(go.Bar(x=df_finance.index, y=df_finance['periodic_cost'],
+                                                                   name='cost',
+                                                                   marker={'color': 'green', 'line.width': 0}),
+                                                            "Total Cost per Period",
+                                                            "Period",
+                                                            "Cost per Period [$]"),
+                                          config={"displayModeBar": False}),
                                 dcc.Graph(id='yearlyProfitGraph',
-                                          figure=go.Figure(
-                                              data=go.Bar(x=df_finance.index, y=df_finance['periodic_profit'],
-                                                          name='cost', marker={'color': 'green', 'line.width': 0}),
-                                              layout=go.Layout(barmode='stack',
-                                                               title=f"total profit per period")),
-                                          )
+                                          figure=get_figure(go.Bar(x=df_finance.index, y=df_finance['periodic_profit'],
+                                                                   name='cost',
+                                                                   marker={'color': 'green', 'line.width': 0}),
+                                                            "Total Profit per Period",
+                                                            "Period",
+                                                            "Profit per Period [$]"),
+                                          config={"displayModeBar": False})
                                 ])
 
     display_pollution = html.Div([dcc.Graph(id='yearlyPollutionGraph',
-                                            figure=go.Figure(
-                                                data=[go.Bar(x=df_finance.index, y=df_finance[col], name=col,
-                                                             marker={'color': colors[col], 'line.width': 0})
-                                                      for index, col in enumerate(pollution_columns_greenhouse_gases)],
-                                                layout=go.Layout(title=f"greenhouse gases pollution per period")),
-
-                                            style={"height": "600px"}),
+                                            figure=get_figure(
+                                                [go.Bar(x=df_finance.index, y=df_finance[col], name=col,
+                                                        marker={'color': colors[col], 'line.width': 0})
+                                                 for index, col in enumerate(pollution_columns_greenhouse_gases)],
+                                                "Greenhouse Gases Pollution per Period",
+                                                "Period",
+                                                "Pollutes per Period [kg]",
+                                                bar_mode="group"
+                                            ),
+                                            config={"displayModeBar": False}),
                                   dcc.Graph(id='yearlyPollutionGraph',
-                                            figure=go.Figure(
-                                                data=[go.Bar(x=df_finance.index, y=df_finance[col], name=col,
-                                                             marker={'color': colors[col], 'line.width': 0})
-                                                      for index, col in enumerate(pollution_columns_other)],
-                                                layout=go.Layout(title=f"other gases pollution per period")),
-
-                                            style={"height": "600px"})
+                                            figure=get_figure(
+                                                [go.Bar(x=df_finance.index, y=df_finance[col], name=col,
+                                                        marker={'color': colors[col], 'line.width': 0})
+                                                 for index, col in enumerate(pollution_columns_other)],
+                                                "Other Gases Pollution per Period",
+                                                "Period",
+                                                "Pollutes per Period [kg]",
+                                                bar_mode="group"
+                                            ),
+                                            config={"displayModeBar": False})
                                   ])
 
     display = html.Div([dbc.Accordion([dbc.AccordionItem(display_summery, title='Summery'),
@@ -340,16 +335,22 @@ def get_parameters(config, units, explain, id=itertools.count(), loc=""):
                     result.append(dbc.Row([
                         dbc.Col([f"Period {int(parameter) + 1}:"], width="auto"),
                         dbc.Col(
-                            dbc.Input(
-                                id={'type': 'config-input', 'index': id.__next__()},
-                                value=f"{value}",
-                                type="number"
-                            ), width=True)
+                            dbc.InputGroup(
+                                [
+                                    dbc.Input(
+                                        id={'type': 'config-input', 'index': id.__next__()},
+                                        value=f"{value}",
+                                        type="number"
+                                    ),
+                                    dbc.InputGroupText("kW" if "solar_panel_purchased" in loc else ("kWh" if "batteries_purchased" in loc else ""))
+                                ]
+                            )
+                            , width=True)
                     ], className="my-2", align="center"))
                 else:
                     result.append(dbc.Row([
                         dbc.Col([f"{parameter_name}:"], width="auto"),
-                        dbc.Col([dbc.Button("?", id=f"{loc}-{parameter}", className="fa-question-circle",
+                        dbc.Col([dbc.Button("?", id=f"{loc}-{parameter}",
                                             style=roundbutton),
                                  dbc.Popover(explain.pop(0), body=True, target=f"{loc}-{parameter}",
                                              trigger="hover", placement="right-start")], width=2),

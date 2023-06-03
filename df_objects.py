@@ -557,6 +557,9 @@ class HourlySimulationDataOfPeriod(PeriodsSimulation):
     def get_electricity_sells(self):
         return [item for item in self.df["Selling"].to_numpy()]
 
+    def get_electricity_didnt_buy(self):
+        return [item for item in (self.df["Solar"].to_numpy() + self.df["Batteries"].to_numpy())]
+
     def get_start_date(self):
         return self.df["Date"][0].to_pydatetime()
 

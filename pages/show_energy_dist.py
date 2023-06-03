@@ -2,7 +2,7 @@ import json
 
 from imports import *
 from df_objects import *
-from pages.laod_display import generate_year_enr_graph, generate_day_enr_graph, dict_to_dataframe, get_parameter_wrapper
+from pages.laod_display import get_figure, generate_year_enr_graph, generate_day_enr_graph, dict_to_dataframe, get_parameter_wrapper
 
 dash.register_page(__name__)
 
@@ -35,10 +35,9 @@ layout = html.Div(dbc.Row([dbc.Col(sidebar, width=3),
     State("df_energy", "data")
 )
 def update_yearly_graph(value, df):
-    fig = go.Figure(data=generate_year_enr_graph(value, value + 1, dict_to_dataframe(df), "D"),
-                    layout=go.Layout(barmode='stack', title=f"{value} energy distribution"))
-    fig.update_layout(bargap=0)
-    return fig
+    return get_figure(generate_year_enr_graph(value, value + 1, dict_to_dataframe(df), "D"),
+                      f"{value} energy distribution",
+                      "Date", "Energy [kWh]", bargap=0)
 
 
 @callback(
@@ -50,9 +49,9 @@ def update_yearly_graph(value, df):
 )
 def update_daily_graph(clickData, df):
     date = datetime.datetime.strptime(clickData['points'][0]['x'], "%Y-%m-%d")
-    return go.Figure(data=generate_day_enr_graph(date, dict_to_dataframe(df)),
-                     layout=go.Layout(barmode='stack', title=f"{date.strftime('%d/%m/%Y')} energy distribution")), {
-               "display": "block"}
+    return get_figure(generate_day_enr_graph(date, dict_to_dataframe(df)),
+                      f"{date.strftime('%d/%m/%Y')} energy distribution",
+                        "Hour", "Energy [kWh]"), {"display": "block"}
 
 
 def replace_json_value(config, parameter, val):
@@ -78,7 +77,6 @@ def replace_value(dict, hirarchy, value):
 @callback(
     Output("config", "data", allow_duplicate=True),
     Input({'type': 'config-input', 'index': ALL}, 'value'),
-     #Input({'type': 'config-parameter', 'index': ALL}, 'children')],
     State("config", "data"),
     prevent_initial_call=True
 )

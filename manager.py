@@ -24,7 +24,6 @@ class Manager:
 
     def __init__(self,
                  hourly_electricity_demand: DemandHourly,
-                 objects_period_strategy: list[period_strategy.PeriodStrategy],
                  periodic_available_area: np.array,
                  hourly_solar_radiation: SolarRadiationHourly,
                  daily_strategy: Callable, config: dict):
@@ -45,7 +44,10 @@ class Manager:
         self.periods_amount = (end_date - self.start_date).days // self.periods_length_in_days
         self.hourly_electricity_demand = hourly_electricity_demand
         strategy = pd.DataFrame.from_dict(config["STRATEGY"])
-        self.objects_period_strategy = [period_strategy.PeriodStrategy(row["solar_panel_purchased"], row["batteries_purchased"]) for index, row in strategy.iterrows()]
+        self.objects_period_strategy = [period_strategy.PeriodStrategy(row["solar_panel_purchased"],
+                                                                       row["batteries_purchased"],
+                                                                       config)
+                                        for index, row in strategy.iterrows()]
         self.periodic_available_area = periodic_available_area
         self.hourly_solar_radiation = hourly_solar_radiation
         self.daily_strategy = daily_strategy

@@ -17,13 +17,13 @@ from df_objects import HourlyPricesData, HourlyEmmision, HourlySimulationDataOfP
 
 
 class PostProcessor():
-    DATA_TYPES_AMOUNT = 5
+    DATA_TYPES_AMOUNT = 6
     PERIODIC_COST_INDEX = 0
     PERIODIC_PROFIT_INDEX = 1
     PERIODIC_CO2_INDEX = 2
     PERIODIC_SOx_INDEX = 3
     PERIODIC_PMx_INDEX = 4
-
+    PERIODIC_DIDNT_BUY_INDEX = 5
 
     def __init__(self, simulation_output: pandas.DataFrame, config):
         time_string_format = config["TIME_FORMAT"]
@@ -33,6 +33,7 @@ class PostProcessor():
         self.periods_amount = (end_date - self.start_date).days // self.periods_length_in_days
         self.simulation_output = simulation_output
         logging.info(f"PostProcessor was built successfully.")
+        self.pollution_rates = config["pollution_rates"]
 
     def get_period_dates_by_index(self, period_i: int) -> (datetime.datetime, datetime.datetime):
         period_len = datetime.timedelta(days=self.periods_length_in_days)
@@ -60,6 +61,13 @@ class PostProcessor():
                 prices,
                 start_date,
                 end_date)
+
+            periodic_data[period_i][self.PERIODIC_DIDNT_BUY_INDEX] = self.calculate_periodic_didnt_buy(
+                simulation_period_output,
+                prices,
+                start_date,
+                end_date)
+
             total_pollute = self.calculate_periodic_pollute(
                 simulation_period_output,
                 emission_rate,
@@ -71,9 +79,16 @@ class PostProcessor():
             total_benefit += periodic_data[period_i][self.PERIODIC_PROFIT_INDEX] - \
                              periodic_data[period_i][self.PERIODIC_COST_INDEX]
 
-            set_progress((str(period_i + 1), str(self.periods_amount), "Calculate incomes and pollutes...", f"{round((period_i + 1) / self.periods_amount * 100)}%"))
+            set_progress((str(period_i + 1), str(self.periods_amount), "Calculate incomes and pollutes...",
+                          f"{round((period_i + 1) / self.periods_amount * 100)}%"))
 
-        return pd.DataFrame(periodic_data, columns=['periodic_cost', 'periodic_profit', 'periodic_C02', 'periodic_SOx', 'periodic_PMx']), total_benefit
+        df = pd.DataFrame(periodic_data,
+                          columns=['periodic_cost', 'periodic_profit', 'periodic_C02',
+                                   'periodic_SOx', 'periodic_PMx', 'periodic_didnt_buy'])
+        df['Date'] = [self.start_date + datetime.timedelta(days=self.periods_length_in_days * i) for i in
+                      range(self.periods_amount)]
+        df = df.set_index('Date')
+        return df, total_benefit
 
     def calculate_periodic_cost(self, simulation_period_output: HourlySimulationDataOfPeriod,
                                 prices: HourlyPricesData,
@@ -137,6 +152,21 @@ class PostProcessor():
         period_prices = prices.get_selling_electricity_price_by_range_of_date(start_date, end_date)
         return float(np.dot(simulation_period_output.get_electricity_sells(), period_prices))
 
+    def calculate_periodic_didnt_buy(self, simulation_period_output: HourlySimulationDataOfPeriod,
+                                     prices: HourlyPricesData,
+                                     start_date: datetime.datetime,
+                                     end_date: datetime.datetime) -> float:
+        """
+        calculates the profit for a given period.
+        :param simulation_period_output: an object which contains the simulation output of the current period
+        :param prices: an object which represents the price of the electricity each hour, in todo: add units
+        :param start_date: the start date of the period
+        :param end_date: the end date of the period
+        :return: the periodic profit
+        """
+        period_prices = prices.get_selling_electricity_price_by_range_of_date(start_date, end_date)
+        return float(np.dot(simulation_period_output.get_electricity_didnt_buy(), period_prices))
+
     def calculate_periodic_pollute(self, simulation_period_output: HourlySimulationDataOfPeriod,
                                    emission_rate: HourlyEmmision,
                                    start_date: datetime.datetime,
@@ -151,11 +181,10 @@ class PostProcessor():
         """
         # TODO: move the constants to a config file
         # the data is presented in units of grams.
-        POLLUTION_RATES = {"CO2": 397, "SOx": 0.16, "PMx": 0.02} # units: g/kwh
         periodic_electricity_buying = float(np.sum(simulation_period_output.get_electricity_buying()))
-        period_pollution = {"CO2": POLLUTION_RATES["CO2"] * periodic_electricity_buying,
-                            "SOx": POLLUTION_RATES["SOx"] * periodic_electricity_buying,
-                            "PMx": POLLUTION_RATES["PMx"] * periodic_electricity_buying}  # units: g
+        period_pollution = {"CO2": self.pollution_rates["CO2"] * periodic_electricity_buying,
+                            "SOx": self.pollution_rates["SOx"] * periodic_electricity_buying,
+                            "PMx": self.pollution_rates["PMx"] * periodic_electricity_buying}
         return period_pollution
 
     def save_output(self, periodic_data: pd.DataFrame) -> None:
@@ -307,9 +336,9 @@ def write_electricity_prices_csv_real_values():
             if date.day == 29 and date.month == 2:
                 electricity_prices.append(raw_electricity_price_in_2022[
                                               f'{2022}-{str(date.month).zfill(2)}-{str(date.day - 1).zfill(2)}T{str(hour).zfill(2)}:00:00'])
-            elif date.day==25 and date.month==3 and hour == 2:
+            elif date.day == 25 and date.month == 3 and hour == 2:
                 electricity_prices.append(raw_electricity_price_in_2022[
-                                              f'{2022}-{str(date.month).zfill(2)}-{str(date.day).zfill(2)}T{str(hour-1).zfill(2)}:00:00'])
+                                              f'{2022}-{str(date.month).zfill(2)}-{str(date.day).zfill(2)}T{str(hour - 1).zfill(2)}:00:00'])
 
             else:
                 electricity_prices.append(raw_electricity_price_in_2022[
@@ -361,5 +390,5 @@ if __name__ == '__main__':
     # unittest.main()
     # write_electricity_prices_csv()
     # write_pollution_rates_csv()
-    #write_pollution_rates_csv_test_values()
+    # write_pollution_rates_csv_test_values()
     pass
