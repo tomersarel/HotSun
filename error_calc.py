@@ -1,8 +1,8 @@
 import math
+import matplotlib.pyplot as plt
 from distutils.command.config import config
 import pandas as pd
 import numpy as np
-
 import battery
 import hourly_strategy
 import period_strategy
@@ -18,12 +18,23 @@ solar_rad_hourly = SolarProductionHourlyDataPVGIS(ConfigGetter['LOCATION']['long
 manager = Manager(demand_hourly, [period_strategy.PeriodStrategy(10000, 100) for i in range(33)], [],
                       solar_rad_hourly,
                       hourly_strategy.GreedyDailyStrategy(), ConfigGetter)
-def a(a):
+
+
+def n(a):
     pass
 
 
+'''data = {'a': np.arange(50),
+        'c': np.random.randint(0, 50, 50),
+        'd': np.random.randn(50)}
+data['b'] = data['a'] + 10 * np.random.randn(50)
+data['d'] = np.abs(data['d']) * 100
 
-
+plt.scatter('a', 'b', c='c', s='d', data=data)
+plt.xlabel('entry a')
+plt.ylabel('entry b')
+plt.show()
+'''
 # rate_set = [1400,1450,1500,1550,1600]
 # arr_r = []
 # for i in rate_set:
@@ -46,7 +57,6 @@ def a(a):
 # max_df_r.to_csv('charge_rate_max_r.csv')
 
 
-
 '''capacity_set = [4900,4950,5000,5050,5100]
 arr_c = []
 for i in capacity_set:
@@ -64,63 +74,79 @@ min_df_c.to_csv('charge_rate_min_c.csv')
 max_df_c.to_csv('charge_rate_max_c.csv')
 '''
 d = pd.read_csv("Sumenergy.csv")
+original_df = manager.run_simulator(a)
+original_df.drop('Date', axis='columns', inplace=True)
+original_df.to_csv('original_data')
 
+def calc_parameter_error(name, prercent, amount):
 
-def calaParameterError(name, prercent, amount):
     name_set = np.linspace(ConfigGetter["battery"][name]*((100 - prercent)/100), ConfigGetter["battery"][name]*((100 + prercent)/100), amount)
     arr = []
     for i in name_set:
-        battery_change = ConfigGetter["battery"]
-        battery_change[name] = i
-        tmp = manager.run_simulator(a)
+        ConfigGetter["battery"][name] = i
+        tmp = manager.run_simulator(n)
         tmp.drop('Date', axis='columns', inplace=True)
-        arr.append(tmp)
+        np_a = tmp.to_numpy()
+        arr.append(np_a)
 
-    simulation_arr = np.stack([df.to_numpy() for df in arr])
-
-    # date_columns = simulation_arr[1]['Date']
+    simulation_arr = np.stack(arr)
 
     minimum_values = np.min(simulation_arr, axis=0)
     maximum_values = np.max(simulation_arr, axis=0)
-    minimum_df = pd.DataFrame(minimum_values, columns=arr[0].columns)
-    maximum_df = pd.DataFrame(maximum_values, columns=arr[0].columns)
-    # maximum_values.delete('Date', axis='columns', inplace=True)
-    # np.delete(maximum_values, 'Date', axis=None)
-    # minimum_values.delete('Date', axis='columns', inplace=True)
-    # np.delete(minimum_values, 'Date', axis=None)
 
-    total_precent = (maximum_values - minimum_values) * np.reciprocal(d.to_numpy(), where=d.to_numpy() != 0) * 100
-    up_precent = (maximum_values - d) * np.reciprocal(d.to_numpy(), where=d.to_numpy() != 0) * 100
-    down_precent = (d - minimum_values) * np.reciprocal(d.to_numpy(), where=d.to_numpy() != 0) * 100
+    minimum_df = pd.DataFrame(minimum_values, columns=['Batteries', 'Solar', 'Buying',
+                                                       'Selling', 'Lost', 'Storaged',
+                                                       'NewBatteries', 'AllBatteries',
+                                                       'NewSolarPanels', 'AllSolarPanels'])
+    maximum_df = pd.DataFrame(maximum_values, columns=['Batteries', 'Solar', 'Buying',
+                                                       'Selling', 'Lost', 'Storaged',
+                                                       'NewBatteries', 'AllBatteries',
+                                                       'NewSolarPanels', 'AllSolarPanels'])
+    np_original = original_df.to_numpy()
+
+    reciprocal_values = np.reciprocal(np_original, where=np_original != 0)
+
+    pd_df_with_nones = pd.DataFrame(reciprocal_values)
+    pd_df_with_nones.fillna(0, inplace=True)
+    reciprocal_values = pd_df_with_nones.to_numpy()
+
+    total_precent = (maximum_values - minimum_values) * reciprocal_values * 100
+    up_precent = (maximum_values - np_original) * reciprocal_values * 100
+    down_precent = (np_original - minimum_values) * reciprocal_values * 100
+
+    total_precent = pd.DataFrame(total_precent)
+    up_precent = pd.DataFrame(up_precent)
+    down_precent = pd.DataFrame(down_precent)
+
+
     frames = [total_precent, up_precent, down_precent]
+
     final_precent = pd.concat(frames)
-    # maximum_values['Date'] = date_columns
-    # minimum_values['Date'] = date_columns
-    # final_precent['Date'] = date_columns
     return maximum_df, minimum_df, final_precent
 
-a, b, c = calaParameterError("capacity", 5, 5)
+
+a, b, c = calc_parameter_error("capacity", 5, 5)
 a.to_csv('maximum_capacity.csv')
 b.to_csv('minimum_capacity.csv')
 c.to_csv('totalprecent_capacity.csv')
 
 
-a, b, c = calaParameterError("lifetime", 5, 5)
+a, b, c = calc_parameter_error("lifetime", 5, 5)
 a.to_csv('maximum_lifetime.csv')
 b.to_csv('minimum_lifetime.csv')
 c.to_csv('totalprecent_lifetime.csv')
 
-a, b, c = calaParameterError("charge_rate", 5, 5)
+a, b, c = calc_parameter_error("charge_rate", 5, 5)
 a.to_csv('maximum_charge_rate.csv')
 b.to_csv('minimum_charge_rate.csv')
 c.to_csv('totalprecent_charge_rate.csv')
 
-a, b, c = calaParameterError("efficiency", 5, 5)
+a, b, c = calc_parameter_error("efficiency", 5, 5)
 a.to_csv('maximum_efficiency.csv')
 b.to_csv('minimum_efficiency.csv')
 c.to_csv('totalprecent_efficiency.csv')
 
-a, b, c = calaParameterError("decay_rate", 5, 5)
+a, b, c = calc_parameter_error("decay_rate", 5, 5)
 a.to_csv('maximum_decay_rate.csv')
 b.to_csv('minimum_decay_rate.csv')
 c.to_csv('totalprecent_decay_rate.csv')
