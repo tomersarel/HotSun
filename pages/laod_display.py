@@ -195,7 +195,7 @@ def get_score_display(score, label):
                          sort=False
                          )],
             layout=go.Layout(annotations=[go.layout.Annotation(text=f"{score}%", showarrow=False,
-                                                               font=dict(size=35, color='black'))],
+                                                               font=dict(size=32, color='black'))],
                              margin=dict(t=0, b=0))
         ),
         config={

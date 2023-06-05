@@ -7,10 +7,10 @@ from pages.laod_display import get_figure, generate_year_enr_graph, generate_day
 dash.register_page(__name__)
 
 sidebar = html.Div([html.H4("Control Panel", className="text-center my-2"),
-                    dbc.Button("Run", id="run", color="primary", style={"width": "45%"},
-                               className="my-2 mx-2 text-center"),
-                    dbc.Button("Cancel", id="cancel", color="primary", style={"width": "45%"},
-                               className="my-2 mx-2 text-center"),
+                    dbc.Button("Run", id="run", color="primary", style={"width": "45.5%", "margin": "2.5% 1.5% 2.5% 3%"},
+                               className="text-center"),
+                    dbc.Button("Cancel", id="cancel", color="primary", style={"width": "45.5%", "margin": "2.5% 3% 2.5% 1.5%"},
+                               className="text-center"),
                     html.Div(id="paramerts", className="my-2 mx-2"),
                     dcc.Store(id="df_energy"), dcc.Store(id="df_finance"),
                     dcc.Location(id="location")],

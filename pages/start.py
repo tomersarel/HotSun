@@ -8,7 +8,6 @@ import base64
 from dash import dash_table
 from datetime import datetime
 from dash.exceptions import PreventUpdate
-
 from imports import *
 
 dash.register_page(__name__)
@@ -23,30 +22,34 @@ def calculate_periods_amount(start, end, length):
 def get_screen(i, period, start, end, location, startegy):
     if i == 0:
         town_select = dcc.Dropdown(id="select",
-                                   placeholder='Select your city',
+                                   placeholder="Select a city",
                                    options=[{"label": city, "value": f"{loc[0]}/{loc[1]}/{city}"} for (city, loc) in
                                             df_objects.get_town_loc_by_name()], persistence=True,
                                    persistence_type='local', value="32.08/34.78/Tel Aviv-Yafo")
         return html.Div([dbc.Row([dbc.Col(html.H2("Choose a city"))]),
-                         dbc.Row([dbc.Col(html.Big("description of this paramter like thie like"))]),
                          dbc.Row([dbc.Col(html.H1(" "))]),
-                         dbc.Row([dbc.Col(town_select)])],
+                         dbc.Row([dbc.Col(town_select)]),
+                        dbc.Row([dbc.Col(html.H1(" "))]),
+                        dbc.Row([dbc.Col(html.H6(
+                            "Select the city you want to simulate. We use this in order to get the solar radiation data for the simulation.",
+                        style={"color": "rgb(40, 40, 40)"}))])],
                         style={"padding": "20px"})
     if i == 1:
-        return html.Div([dbc.Row([dbc.Col(html.H2("Choose date range"))]),
-                         dbc.Row([dbc.Col(html.Big("description of this paramter like thie like"))]),
+        return html.Div([dbc.Row([dbc.Col(html.H2("Choose a date range"))]),
                          dbc.Row([dbc.Col(html.H1(" "))]),
                          dbc.Row([dbc.Col(dcc.DatePickerRange(id="range-pick",
                                                               min_date_allowed=datetime.date(2017, 1, 1),
                                                               start_date=start,
                                                               end_date=end,
                                                               display_format="DD/MM/YYYY",
-                                                              max_date_allowed=datetime.date(2050, 1, 1)))])
+                                                              max_date_allowed=datetime.date(2050, 1, 1)))]),
+                        dbc.Row([dbc.Col(html.H1(" "))]),
+                         dbc.Row([dbc.Col(html.H6("Select the range of date you want to simulate. Notice that the simulation works only for dates between 2017 and 2050.",
+                                                  style={"color": "rgb(40, 40, 40)"}))]),
                          ],
                         style={"padding": "20px"})
     if i == 2:
         return html.Div([dbc.Row([dbc.Col(html.H2("Choose period length"))]),
-                         dbc.Row([dbc.Col(html.Big("description of this paramter like thie like"))]),
                          dbc.Row([dbc.Col(html.H1(" "))]),
                          dbc.Row([dbc.Col(dbc.InputGroup(
                              [
@@ -59,21 +62,24 @@ def get_screen(i, period, start, end, location, startegy):
                                            step=1, value=period),
                                  dbc.InputGroupText("days", id="units")
                              ]
-                         ))])],
+                         ))]),
+                         dbc.Row([dbc.Col(html.H1(" "))]),
+                         dbc.Row([dbc.Col(html.H6("Select the length of each period. Period is the time between purchase of new solar panels and baterries.", style={"color": "rgb(40, 40, 40)"}))]),
+                         ],
                         style={"padding": "20px"})
     if i == 3:
         return html.Div([dbc.Row([dbc.Col(html.H2("Enter purchase strategy"))]),
-                         dbc.Row([dbc.Col([html.Big("description of this paramter like thie like")])]),
-                         dbc.Row([dbc.Col(html.H1(" "))]),
+                         dbc.Row([dbc.Col(html.Div(style={"height": "16px"}))]),
                          dbc.Row(dbc.Row(
-                             [dbc.Col([dbc.Button(children="Download Template", id="download", color="secondary"),
-                                       dcc.Download(id="download-template")], width=3), dbc.Col(dcc.Upload(
+                             [dbc.Col([dbc.Button(children=DashIconify(icon="lucide:download", height=40), id="download", color="secondary"),
+                                       dcc.Download(id="download-template")], width=1),
+                              dbc.Col(dcc.Upload(
                                  id='upload-data',
                                  children=html.Div(
                                      dbc.Alert(html.Div(['Drag and Drop or ',
                                                          html.B('Select Files')],
                                                         style={"vertical-align": "center"}), id="msg",
-                                               color="light"), style={"height": "100%"})
+                                               color="light"), style={"height": "40px"})
                                  ,
                                  style={
                                      'width': '100%',
@@ -86,7 +92,23 @@ def get_screen(i, period, start, end, location, startegy):
                                  },
                                  multiple=False
                              ))])),
-                         dbc.Row(dbc.Row([dbc.Col(dcc.Graph('myFig'), width=6), dbc.Col(dcc.Graph('myFig2'), width=6)]),
+                         dbc.Row([dbc.Col(html.Div(style={"height": "16px"}))]),
+                         dbc.Row(dbc.Row([dbc.Col(dcc.Graph('myFig',
+                                                            config={
+                                                                "displayModeBar": False,
+                                                                "scrollZoom": False,
+                                                                "doubleClick": False,
+                                                                "showTips": False
+                                                            },
+                                                            style={"height": "25vh"}), width=6),
+                                          dbc.Col(dcc.Graph('myFig2',
+                                                            config={
+                                                                "displayModeBar": False,
+                                                                "scrollZoom": False,
+                                                                "doubleClick": False,
+                                                                "showTips": False
+                                                            },
+                                                            style={"height": "25vh"}), width=6)]),
                                  style={"display": "none"}, id="graph-id"),
                          ],
                         style={"padding": "20px"})
@@ -105,7 +127,7 @@ def get_screen(i, period, start, end, location, startegy):
                               dbc.Col(f"{location[0]}/{location[1]}")]),
                          dbc.Row([dbc.Col(html.P("\n\n\n"))]),
                          dbc.Row([dbc.Col(dbc.Button("Run", id="run1", href="/show-energy-dist"))]),
-                                 html.Div(id="initial")
+                         html.Div(id="initial")
                          ],
                         style={"padding": "20px"})
 
@@ -114,15 +136,26 @@ center = {"position": "absolute", "top": "50%", "-ms-transform": "translateY(-50
 bottom = {"position": "absolute", "top": "95%", "-ms-transform": "translateY(-50%)", "transform": "translateY(-50%)"}
 
 layout = html.Div([dbc.Card(
-    [dbc.CardBody([html.Div([dbc.Row([dbc.Col(dbc.Button("Previous", id="prev", n_clicks=0, style=center), width=2),
-                                      dbc.Col(dbc.Form(id="content"), width=8),
-                                      dbc.Col(dbc.Button("Next", id="next", n_clicks=0, style=center), width=2)]),
-                             dbc.Row(dbc.Col(html.Small("1/5", style=bottom, id="step_num"), width=2),
-                                     justify="center")])])]
+    [dbc.CardBody([html.Div([dbc.Row([
+        dbc.Col(html.Div(dbc.Button(DashIconify(icon="fluent-mdl2:back",
+                                                height=40, color="rgba(50,50,50,0.5)"),
+                                    id="prev", n_clicks=0, outline=False,
+                                    color="transparent"),
+                         className="text-center", style=center)),
+        dbc.Col(dbc.Form(id="content"), width=10),
+        dbc.Col(html.Div(dbc.Button(DashIconify(icon="fluent-mdl2:forward",
+                                                height=40, color="rgba(50,50,50,0.5)"),
+                                    id="next", n_clicks=0, outline=False,
+                                    color="transparent"),
+                         className="text-center", style=center))
+    ],
+        className="d-flex flex-wrap justify-content-center"),
+        dbc.Row(dbc.Col(html.Small("1/5", style=bottom, id="step_num"), width=2),
+                justify="center")])])]
     , style={"display": "block",
-             "width": "80%",
+             "width": "70%",
              "padding": "10px",
-             "margin": "5% 10% 10% 10%",
+             "margin": "5% 10% 15% 15%",
              "backdrop-filter": "blur(8px)"
              }, color="rgba(255, 255, 255, 0.3")
     , dcc.Store(id="city-lon-lat", storage_type='local', data=ConfigGetter['LOCATION'])
@@ -133,8 +166,6 @@ layout = html.Div([dbc.Card(
     , dcc.Store(id="period-length", storage_type='local', data=ConfigGetter['PERIODS_DAYS_AMOUNT'])
     , dcc.Store(id="purchase-strategy", storage_type='local', data=ConfigGetter['STRATEGY'])])
 
-#"-webkit-filter": "drop-shadow(5px 5px 5px #333333)",
-#"filter": "drop-shadow(5px 5px 5px #333333)",
 
 @callback(
     Output('content', 'children'),
@@ -277,33 +308,41 @@ def update_output(content, file_name, current, start, end, length):
     else:
         result[1], result[2] = html.Div(['Drag and Drop or ', html.B('Select Files')]), "light"
 
-    fig = go.Figure(
-        data=[
-            {'x': x, 'y': y[0], 'type': 'bar'},
-        ],
-        layout=go.Layout(
-            plot_bgcolor="#fff",
-            paper_bgcolor="#fff",
-            xaxis={"title": "period"},
-            yaxis={"title": "solar_panel_purchased"}
-        )
-    )
-
-    fig2 = go.Figure(
-        data=[
-            {'x': x, 'y': y[1], 'type': 'bar'}
-        ],
-        layout=go.Layout(
-            plot_bgcolor="#FFF",
-            paper_bgcolor="#fff",
-            xaxis={"title": "period"},
-            yaxis={"title": "batteries_purchased"}
-        )
-    )
-
     if result[0] is None:
         period_amount = calculate_periods_amount(start, end, length)
         result[0] = pandas.DataFrame(
             data={'period': [i + 1 for i in range(period_amount)], 'solar_panel_purchased': [1300] * period_amount,
                   'batteries_purchased': [100000] * period_amount})
+
+    fig = go.Figure(data=go.Scatter(x=x, y=y[0], mode='lines+markers', name='solar_panel_purchased'),
+                    layout={
+                        'plot_bgcolor': "rgba(0,0,0,0)",
+                        'paper_bgcolor': "rgba(0,0,0,0)",
+                        'xaxis': {
+                            "title": "period",
+                            "showgrid": False,
+                        },
+                        'yaxis': {
+                            "title": "Power [kW]",
+                            "showgrid": False,
+                            "range": [0, 0 if len(y[0]) == 0 else max(y[0]) * 1.1],
+                        },
+                        'margin': {"l": 0, "r": 0, "t": 0, "b": 0}
+                    })
+    fig2 = go.Figure(data=go.Scatter(x=x, y=y[1], mode='lines+markers', name='batteries_purchased'),
+                     layout={
+                         'plot_bgcolor': "rgba(0,0,0,0)",
+                         'paper_bgcolor': "rgba(0,0,0,0)",
+                         'xaxis': {
+                             "title": "period",
+                             "showgrid": False,
+                         },
+                         'yaxis': {
+                             "title": "Capacity [kWh]",
+                             "showgrid": False,
+                             "range": [0, 0 if len(y[1]) == 0 else max(y[1]) * 1.1],
+                         },
+                         'margin': {"l": 0, "r": 0, "t": 0, "b": 0}
+                     })
+
     return result[0][['solar_panel_purchased', 'batteries_purchased']].to_json(), result[1], result[2], fig, fig2, style
