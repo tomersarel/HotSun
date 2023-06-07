@@ -89,6 +89,10 @@ class TestFunctions(unittest.TestCase):
         businesses_amount_growth = 1.01
         businesses_demand_growth = 1.02
         businesses_demand = 5000
+        restaurants_amount = 1000
+        restaurants_amount_growth = 1.01
+        restaurants_demand_growth = 1.02
+        restaurants_demand = 5000
         factories_amount = 1000
         factories_amount_growth = 1.01
         factories_demand_growth = 1.034
@@ -104,6 +108,8 @@ class TestFunctions(unittest.TestCase):
                                     hotels_amount, hotels_amount_growth, hotels_demand_growth, hotels_demand,
                                     businesses_amount, businesses_amount_growth, businesses_demand_growth,
                                     businesses_demand,
+                                    restaurants_amount, restaurants_amount_growth, restaurants_demand_growth,
+                                    restaurants_demand,
                                     factories_amount, factories_amount_growth, factories_demand_growth,
                                     factories_demand,
                                     industry_amount, industry_amount_growth, industry_demand_growth, industry_demand)
