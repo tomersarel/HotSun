@@ -17,14 +17,15 @@ from df_objects import HourlyPricesData, HourlyEmmision, HourlySimulationDataOfP
 
 
 class PostProcessor():
-    DATA_TYPES_AMOUNT = 7
+    DATA_TYPES_AMOUNT = 8
     PERIODIC_COST_INDEX = 0
     PERIODIC_PROFIT_INDEX = 1
     PERIODIC_CO2_INDEX = 2
     PERIODIC_SOx_INDEX = 3
     PERIODIC_PMx_INDEX = 4
     PERIODIC_DIDNT_BUY_INDEX = 5
-    PERIODIC_WARNING = 6
+    PERIODIC_FULL_WARNING = 6
+    PERIODIC_LOW_WARNING = 7
 
     def __init__(self, simulation_output: pandas.DataFrame, config):
         time_string_format = config["TIME_FORMAT"]
@@ -35,6 +36,9 @@ class PostProcessor():
         self.simulation_output = simulation_output
         logging.info(f"PostProcessor was built successfully.")
         self.pollution_rates = config["pollution_rates"]
+        self.high_capacity_threshold = config["warnings"]["max_capacity_threshold"] / 100
+        self.low_capacity_threshold = config["warnings"]["min_capacity_threshold"] / 100
+        self.strategy = config["STRATEGY"]
 
     def get_period_dates_by_index(self, period_i: int) -> (datetime.datetime, datetime.datetime):
         period_len = datetime.timedelta(days=self.periods_length_in_days)
@@ -56,7 +60,9 @@ class PostProcessor():
             periodic_data[period_i][self.PERIODIC_COST_INDEX] = self.calculate_periodic_cost(simulation_period_output,
                                                                                              prices,
                                                                                              start_date,
-                                                                                             end_date)
+                                                                                             end_date,
+                                                                                             self.strategy["solar_panel_purchased"][str(period_i)],
+                                                                                             self.strategy["batteries_purchased"][str(period_i)])
             periodic_data[period_i][self.PERIODIC_PROFIT_INDEX] = self.calculate_periodic_profit(
                 simulation_period_output,
                 prices,
@@ -68,6 +74,7 @@ class PostProcessor():
                 prices,
                 start_date,
                 end_date)
+            periodic_data[period_i][self.PERIODIC_PROFIT_INDEX] += periodic_data[period_i][self.PERIODIC_DIDNT_BUY_INDEX]
 
             total_pollute = self.calculate_periodic_pollute(
                 simulation_period_output,
@@ -77,7 +84,8 @@ class PostProcessor():
             periodic_data[period_i][self.PERIODIC_CO2_INDEX] = total_pollute["CO2"]
             periodic_data[period_i][self.PERIODIC_SOx_INDEX] = total_pollute["SOx"]
             periodic_data[period_i][self.PERIODIC_PMx_INDEX] = total_pollute["PMx"]
-            periodic_data[period_i][self.PERIODIC_WARNING] = self.is_full_charge(simulation_period_output)
+            periodic_data[period_i][self.PERIODIC_FULL_WARNING] = self.is_full_charge(simulation_period_output)
+            periodic_data[period_i][self.PERIODIC_LOW_WARNING] = self.is_empty_charge(simulation_period_output)
             total_benefit += periodic_data[period_i][self.PERIODIC_PROFIT_INDEX] - \
                              periodic_data[period_i][self.PERIODIC_COST_INDEX]
 
@@ -86,7 +94,7 @@ class PostProcessor():
 
         df = pd.DataFrame(periodic_data,
                           columns=['periodic_cost', 'periodic_profit', 'periodic_C02',
-                                   'periodic_SOx', 'periodic_PMx', 'periodic_didnt_buy'])
+                                   'periodic_SOx', 'periodic_PMx', 'periodic_didnt_buy', 'is_full', 'is_empty'])
         df['Date'] = [self.start_date + datetime.timedelta(days=self.periods_length_in_days * i) for i in
                       range(self.periods_amount)]
         df = df.set_index('Date')
@@ -98,15 +106,30 @@ class PostProcessor():
         :param simulation_period_output: an object which contains the simulation output of the current period
         :return: True if the batteries are fully charged, False otherwise
         """
-        capacity = np.sum(simulation_period_output.get_capacity())
-        charge = np.sum(simulation_period_output.get_charge())
+        capacity = simulation_period_output.get_capacity()
+        charge = simulation_period_output.get_charge()
+        arr = charge[capacity > 0] / capacity[capacity > 0]
+        precentage_of_high_capacity_days = len(arr[arr >= self.high_capacity_threshold]) / self.periods_length_in_days * 100
+        return precentage_of_high_capacity_days
 
-        return charge / capacity >= 0.95
+    def is_empty_charge(self, simulation_period_output: HourlySimulationDataOfPeriod):
+        """
+        checks if the batteries are fully charged in the end of the period
+        :param simulation_period_output: an object which contains the simulation output of the current period
+        :return: True if the batteries are fully charged, False otherwise
+        """
+        capacity = simulation_period_output.get_capacity()
+        charge = simulation_period_output.get_charge()
+        arr = charge[capacity > 0] / capacity[capacity > 0]
+        precentage_of_low_capacity_days = len(arr[arr <= self.low_capacity_threshold]) / self.periods_length_in_days * 100
+        return precentage_of_low_capacity_days
 
     def calculate_periodic_cost(self, simulation_period_output: HourlySimulationDataOfPeriod,
                                 prices: HourlyPricesData,
                                 start_date: datetime.datetime,
-                                end_date: datetime.datetime) -> float:
+                                end_date: datetime.datetime,
+                                solar_panel_baught: float,
+                                batteries_baught: float) -> float:
         """
         calculates the cost of the system in a certain period.
         :param simulation_period_output: an object which contains the simulation output of the current period
@@ -135,17 +158,16 @@ class PostProcessor():
         :return:
         """
         buying_prices = prices.get_buying_price_by_range_of_date(start_date, end_date)
-        battery_capex_prices = prices.get_battery_capex_by_range_of_date(start_date, end_date)
-        panel_capex_prices = prices.get_solar_panel_capex_by_range_of_date(start_date, end_date)
         battery_opex_prices = prices.get_battery_opex_by_range_of_date(start_date, end_date)
         panel_opex_prices = prices.get_solar_panel_opex_by_range_of_date(start_date, end_date)
-
+        battery_capex = prices.get_battery_capex_by_range_of_date(start_date, start_date + datetime.timedelta(days=1))[0]
+        panel_capex = prices.get_solar_panel_capex_by_range_of_date(start_date, start_date + datetime.timedelta(days=1))[0]
         cost_of_buying_electricity = np.dot(simulation_period_output.get_electricity_buying(), buying_prices)
 
-        cost_of_batteries = np.dot(simulation_period_output.get_new_batteries(), battery_capex_prices) + \
+        cost_of_batteries = batteries_baught * battery_capex + \
                             np.dot(simulation_period_output.get_all_batteries(), battery_opex_prices)
 
-        cost_of_panels = np.dot(simulation_period_output.get_new_solar_panels(), panel_capex_prices) + \
+        cost_of_panels = solar_panel_baught * panel_capex + \
                          np.dot(simulation_period_output.get_all_solar_panels(), panel_opex_prices)
 
         return cost_of_buying_electricity + cost_of_batteries + cost_of_panels

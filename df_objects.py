@@ -291,6 +291,8 @@ class HourlyPricesData(Cost):
 
         self.df = pd.read_csv("data/ElectricityPrices.csv", header=[0])
         self.df['Date'] = pd.to_datetime(self.df['Date'], dayfirst=True)
+        self.df['BatteryCapex'] /= 365 * 24
+        self.df['SolarPanelCapex'] /= 365 * 24
 
     def get_start_and_end_hour(self, start_date: datetime.datetime,
                                end_date: datetime.datetime):
@@ -537,6 +539,7 @@ class HourlySimulationDataOfPeriod(PeriodsSimulation):
 
     def __init__(self, simulation_output: pd.DataFrame, start_date: datetime.datetime, end_date: datetime.datetime):
         self.df = simulation_output[(simulation_output['Date'] >= start_date) & (simulation_output['Date'] < end_date)]
+        self.daily_max_df = self.df.set_index("Date", inplace=False).resample("D").max()
 
     # todo: consider change it to numpy arrays
     def get_new_batteries(self):
@@ -566,11 +569,11 @@ class HourlySimulationDataOfPeriod(PeriodsSimulation):
     def get_end_date(self):
         return self.df["Date"].iloc[-1].to_pydatetime()
 
-    def get_capacity(self):
-        return [item for item in self.df["AllBatteriesCapacity"].to_numpy()]
-
     def get_charge(self):
-        return [item for item in self.df["AllBatteriesCharge"].to_numpy()]
+        return self.daily_max_df["AllBatteriesCharge"].to_numpy()
+
+    def get_capacity(self):
+        return self.daily_max_df["AllBatteries"].to_numpy()
 
 def get_town_loc_by_name():
     df = pd.read_csv("data/cities.csv", header=[0])

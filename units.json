@@ -1,7 +1,6 @@
 {
   "battery":
   {
-    "capacity": ["kwh","Maximum storage of the one battery"],
     "lifetime": ["yr","Length of one battery functionality"],
     "charge_rate": ["kwh/h","Maximum amount of charged energy per hour"],
     "efficiency": ["","Effiency of charging and discharging"],
@@ -9,7 +8,7 @@
   },
   "solar":
   {
-    "lifetime": ["yr","Length of one battery functionality"],
+    "lifetime": ["yr","Length of one solar panel functionality"],
     "efficiency": ["","Effiency of the solar panel"],
     "decay_rate": ["","Decay rate of the solar panel efficiency"],
     "area": ["m^2","Area of one solar panel"],
@@ -22,5 +21,10 @@
         "CO2": ["gr/kWh","CO2 emission rate"],
         "SOx": ["gr/kWh","SOx emission rate"],
         "PMx": ["gr/kWh","PMx emission rate"]
+    },
+  "warning":
+    {
+        "max_capacity_threshold": ["%","Minimum battery capacity percentage for warning of high battery capacity"],
+        "min_capacity_threshold": ["%","Maximum battery capacity percentage for warning of low battery capacity"]
     }
 }

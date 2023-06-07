@@ -174,8 +174,10 @@ def calculus(config, df_energy, df_finance):
 
 
 def grade(calculus_results, df_energy, df_finance):
-    profit = df_finance['periodic_didnt_buy'].sum() + df_finance['periodic_profit'].sum() - df_finance['periodic_cost'].sum()
-    financial = round((np.arctan(np.sign(profit) * np.log10(np.abs(profit))) / np.pi + 1 / 2) * 100)
+    profit = df_finance['periodic_profit'].sum()
+    cost = df_finance['periodic_cost'].sum()
+    balance = df_finance['periodic_profit'].sum() - df_finance['periodic_cost'].sum()
+    financial = round((0.5 + 0.5 *(balance / profit if balance > 0 else balance / cost)) * 100)
 
     enviromental = calculus_results['solar_percentage'][0]
     return [enviromental, round((enviromental + financial) / 2), financial]
@@ -227,7 +229,7 @@ def get_display(config, df_energy, df_finance):
     results = calculus(config, df_energy, df_finance)
     grades = grade(results, df_energy, df_finance)
     df_energy = dict_to_dataframe(df_energy)
-
+    df_finance = pd.DataFrame(df_finance)
     display_summery = html.Div([
         dbc.Row([dbc.Col(get_score_display(score, label), width=12 // len(grades), align="center") for score, label in
                  zip(grades, ['Environmental Score', 'Overall Score', 'Financial Score'])],
@@ -243,7 +245,30 @@ def get_display(config, df_energy, df_finance):
             "Energy [kWh]"),
             config={"displayModeBar": False}),
         dcc.Graph(figure=generate_yaerly_precentages_graph(df_energy),
-                  config={"displayModeBar": False})
+                  config={"displayModeBar": False}),
+        dcc.Graph(figure=get_figure(
+            [go.Scatter(x=df_finance.index, y=df_finance["is_full"], mode='lines', name=f"High Capacity Usage (>{config['warnings']['max_capacity_threshold']}%)"),
+             go.Scatter(x=df_finance.index, y=df_finance["is_empty"], mode='lines', name=f"Low Capacity Usage (<{config['warnings']['min_capacity_threshold']}%)")],
+            f"Usage Profile of Batteries along the Periods",
+            "Period",
+            "Percentage of Days in the Period [%]"),
+            config={"displayModeBar": False}) if np.any(df_finance["is_full"] != 0) or np.any(df_finance["is_empty"] != 0) else None,
+        dbc.Alert(
+            [
+                html.B([html.I(className="bi bi-exclamation-circle-fill mr-2"), "  Warning!"]),
+                f" In some periods your battery are at very high capacity (>{config['warnings']['max_capacity_threshold']}%). Consider adding more storage in the purchase strategy."
+            ],
+            color="warning"
+        )
+        if np.any(df_finance["is_full"] != 0) else None,
+        dbc.Alert(
+            [
+                html.B([html.I(className="bi bi-exclamation-circle-fill mr-2"), "  Warning!"]),
+                f" In some periods your battery are at very low capacity (<{config['warnings']['min_capacity_threshold']}%). Consider decrease amount of storage in the purchase strategy."
+            ],
+            color="warning"
+        )
+        if np.any(df_finance["is_empty"] != 0) else None
     ])
     display_energy = html.Div([dcc.Slider(id="period_slider",
                                           min=config["START_YEAR"],
@@ -255,7 +280,6 @@ def get_display(config, df_energy, df_finance):
                                dcc.Graph(id='yearlyEnergyGraph', config={"displayModeBar": False}),
                                dcc.Graph(id='dailyGraph', style={"display": "None"}, config={"displayModeBar": False})
                                ])
-    df_finance = pd.DataFrame(df_finance)
     display_finance = html.Div([dcc.Graph(id='yearlyCostGraph',
                                           figure=get_figure(go.Bar(x=df_finance.index, y=df_finance['periodic_cost'],
                                                                    name='cost',

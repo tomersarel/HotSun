@@ -27,6 +27,11 @@
         "SOx": 0.16,
         "PMx": 0.02
     },
+    "warnings":
+    {
+        "max_capacity_threshold": 95,
+        "min_capacity_threshold": 5
+    },
     "LOCATION": {
         "longitude": 30,
         "latitude": 30,

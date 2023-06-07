@@ -17,7 +17,10 @@ application = Dash("Hot Sun", use_pages=True,
                    external_stylesheets=[dbc.themes.BOOTSTRAP,
                                          dbc.icons.BOOTSTRAP,
                                          'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css'],
-                   suppress_callback_exceptions=True, background_callback_manager=background_callback_manager,)
+                   suppress_callback_exceptions=True, background_callback_manager=background_callback_manager,
+                   )
+
+application._favicon = "/assets/logo.ico"
 
 navbar = dbc.NavbarSimple(
     children=[
