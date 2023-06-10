@@ -1,0 +1,7 @@
+{"battery":{
+  "capacity": 200,
+  "lifetime": 25,
+  "charge_rate": 70,
+  "efficiency": 1,
+  "decay_rate": 0.2
+}}
