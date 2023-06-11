@@ -74,7 +74,7 @@ min_df_c.to_csv('charge_rate_min_c.csv')
 max_df_c.to_csv('charge_rate_max_c.csv')
 '''
 d = pd.read_csv("Sumenergy.csv")
-original_df = manager.run_simulator(a)
+original_df = manager.run_simulator(n)
 original_df.drop('Date', axis='columns', inplace=True)
 original_df.to_csv('original_data')
 
