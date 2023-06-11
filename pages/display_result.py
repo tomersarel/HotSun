@@ -2,7 +2,7 @@ import json
 
 from imports import *
 from df_objects import *
-from pages.laod_display import get_figure, generate_year_enr_graph, generate_day_enr_graph, dict_to_dataframe, get_parameter_wrapper
+from pages.laod_display import get_figure, generate_daily_energy_graph_by_date, dict_to_dataframe, generate_energy_graph_by_year_range
 
 dash.register_page(__name__)
 
@@ -35,7 +35,13 @@ layout = html.Div(dbc.Row([dbc.Col(sidebar, width=3),
     State("df_energy", "data")
 )
 def update_yearly_graph(value, df):
-    return get_figure(generate_year_enr_graph(value, value + 1, dict_to_dataframe(df), "D"),
+    """
+    The function updates the yearly energy graph
+    :param value: the year to display
+    :param df: the energy dataframe
+    :return: the updated graph
+    """
+    return get_figure(generate_energy_graph_by_year_range(value, value + 1, dict_to_dataframe(df), "D"),
                       f"{value} energy distribution",
                       "Date", "Energy [kWh]", bargap=0)
 
@@ -47,30 +53,31 @@ def update_yearly_graph(value, df):
     State("df_energy", "data"),
     prevent_initial_call=True
 )
-def update_daily_graph(clickData, df):
-    date = datetime.datetime.strptime(clickData['points'][0]['x'], "%Y-%m-%d")
-    return get_figure(generate_day_enr_graph(date, dict_to_dataframe(df)),
+def update_daily_graph(click_data, df):
+    """
+    The function updates the daily energy graph
+    :param click_data: the date to display
+    :param df: the energy dataframe
+    :return: the updated graph
+    """
+    date = datetime.datetime.strptime(click_data['points'][0]['x'], "%Y-%m-%d")
+    return get_figure(generate_daily_energy_graph_by_date(date, dict_to_dataframe(df)),
                       f"{date.strftime('%d/%m/%Y')} energy distribution",
                         "Hour", "Energy [kWh]"), {"display": "block"}
 
 
-def replace_json_value(config, parameter, val):
+def replace_value(dict, hierarchy, value):
     """
-    The function uses recursion to find where does the inital value is stored and replaces it with the users input
+    The function replaces the value of a parameter in a dictionary
+    :param dict: the dictionary
+    :param hierarchy: the hierarchy parameter to replace
+    :param value: the new value
+    :return: the updated dictionary
     """
-    for key, inital_value in config.items():
-        if isinstance(inital_value, dict):
-            config[key] = replace_json_value(inital_value, parameter, val)
-        elif key == parameter:
-            config[key] = val
-    return config
-
-
-def replace_value(dict, hirarchy, value):
-    if not hirarchy:
+    if not hierarchy:
         return value
 
-    dict[hirarchy[0]] = replace_value(dict[hirarchy[0]], hirarchy[1:], value)
+    dict[hierarchy[0]] = replace_value(dict[hierarchy[0]], hierarchy[1:], value)
     return dict
 
 
@@ -81,6 +88,11 @@ def replace_value(dict, hirarchy, value):
     prevent_initial_call=True
 )
 def change_config(val, config):
+    """
+    The function changes the config file
+    :param val: the new value
+    :param config: the config file
+    """
     trigger = ctx.triggered_id
     if trigger and type(val[trigger["index"]]) in [int, float]:
         config = replace_value(config, ConfigGetter.get_locations(config)[trigger["index"]].split("-")[1:], val[trigger["index"]])

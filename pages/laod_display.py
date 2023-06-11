@@ -5,9 +5,6 @@ from df_objects import *
 import pandas as pd
 import numpy as np
 
-FONT_AWESOME = "https://use.fontawesome.com/releases/v5.10.2/css/all.css"
-external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css", FONT_AWESOME]
-
 roundbutton = {
     "border": "2px solid grey",
     "border-radius": "50%",
@@ -21,7 +18,6 @@ roundbutton = {
     "width": 25,
     "margin": 0,
 }
-
 energy_columns = ['Batteries', 'Solar', 'Buying', 'Selling', 'Lost', 'Storaged']
 pollution_columns_greenhouse_gases = ['periodic_C02']
 pollution_columns_other = ['periodic_SOx', 'periodic_PMx']
@@ -31,7 +27,14 @@ colors = {"Solar": "#ffe205", "Batteries": "#d4d4d4", "Buying": "#ec4141", "Sell
 
 def get_figure(data, title_label, x_axis_label, y_axis_label, bar_mode='stack', bargap=None):
     """
-    The function gets a dataframe and returns a figure
+    generate a figure with the given data
+    :param data: the data to be displayed (go object)
+    :param title_label: the title of the graph
+    :param x_axis_label: the x-axis label
+    :param y_axis_label: the y-axis label
+    :param bar_mode: the bar mode
+    :param bargap: the bar gap
+    :return: the figure
     """
     return go.Figure(data=data,
                      layout=go.Layout(barmode=bar_mode,
@@ -57,7 +60,6 @@ def generate_energy_graph_by_date_range(start, end, df, resample='H'):
     :param resample: the resample type
     :return: array of bars by different energy types
     """
-    # df = df.set_index(['Date'])
     data = df[(df.index >= start) & (df.index < end)]
     if resample != 'H':
         data = data.resample(resample, convention="start").sum()
@@ -65,25 +67,38 @@ def generate_energy_graph_by_date_range(start, end, df, resample='H'):
             energy_columns]
 
 
-def generate_year_enr_graph(start_year, end_year, df, resample='Y'):
+def generate_energy_graph_by_year_range(start_year, end_year, df, resample='Y'):
     """
-    generate energy graph by year range and resample it
+    generate energy graph by year range and resample it.
+    :param start_year: the start year
+    :param end_year: the end year
+    :param df: the energy df
+    :param resample: the resample type
+    :return: array of bars by different energy types
     """
     return generate_energy_graph_by_date_range(datetime.datetime(year=start_year, day=1, month=1),
                                                datetime.datetime(year=end_year, day=1, month=1),
                                                df, resample)
 
 
-def generate_day_enr_graph(date, df):
+def generate_daily_energy_graph_by_date(date, df):
     """
-        generate energy graph for single date by hour
+    generate daily energy graph by date
+    :param date: the date
+    :param df: the energy df
+    :return: array of bars by different energy types
     """
     return generate_energy_graph_by_date_range(date,
                                                date + datetime.timedelta(days=1),
                                                df, 'H')
 
 
-def generate_yaerly_precentages_graph(df_energy):
+def generate_yaerly_renewable_energy_precentage_graph(df_energy):
+    """
+    generate yearly renewable energy percentage graph
+    :param df_energy: the energy df
+    :return: the graph
+    """
     yearly = df_energy.resample("Y", convention="start").sum()
     yearly['percentages'] = (yearly['Solar'] + yearly['Batteries']) / (
             yearly['Solar'] + yearly['Batteries'] + yearly['Buying']) * 100
@@ -92,6 +107,8 @@ def generate_yaerly_precentages_graph(df_energy):
         "Yearly Solar Energy Percentage",
         "Year",
         "Solar Energy Percentage [%]")
+
+    # add lines to the graph to show the goals of the NZO, Israel and Tel-Aviv
     yerly_figure.update_layout(shapes=[
         go.layout.Shape(type='line', y0=95, x0=min(yearly.index), x1=max(yearly.index), y1=95,
                         line=dict(color='#808080', dash='dash')),
@@ -143,7 +160,14 @@ def dict_to_dataframe(df):
     return df
 
 
-def calculus(config, df_energy, df_finance):
+def calculate_interesting_numbers(config, df_energy, df_finance):
+    """
+    this function calculate interesting numbers for the dashboard
+    :param config: the config file
+    :param df_energy: the energy data frame
+    :param df_finance: the finance data frame
+    :return: dictionary of interesting numbers and their values for the dashboard
+    """
     # calculate solar energy percentage in last year
     df_energy['Total'] = df_energy['Solar'] + df_energy['Buying'] + df_energy['Batteries']
     last_year = df_energy[df_energy["Date"] >= df_energy["Date"].max() - pd.DateOffset(years=1)]
@@ -173,17 +197,29 @@ def calculus(config, df_energy, df_finance):
     return results
 
 
-def grade(calculus_results, df_energy, df_finance):
+def grade(grades, df_energy, df_finance):
+    """
+    this function calculate the grade of the senerio
+    :param grades: the grades dictionary
+    :param df_energy: the energy data frame
+    :param df_finance: the finance data frame
+    :return: the environmental grade, the financial grade and the total grade
+    """
     profit = df_finance['periodic_profit'].sum()
     cost = df_finance['periodic_cost'].sum()
     balance = df_finance['periodic_profit'].sum() - df_finance['periodic_cost'].sum()
-    financial = round((0.5 + 0.5 *(balance / profit if balance > 0 else balance / cost)) * 100)
-
-    enviromental = calculus_results['solar_percentage'][0]
-    return [enviromental, round((enviromental + financial) / 2), financial]
+    financial = round((0.5 + 0.5 * (balance / profit if balance > 0 else balance / cost)) * 100)
+    environmental = grades['solar_percentage'][0]
+    return [environmental, round((environmental + financial) / 2), financial]
 
 
 def get_score_display(score, label):
+    """
+    this function create the score display for the dashboard
+    :param score: the score
+    :param label: the label of the score
+    :return: the score display
+    """
     return html.Div([html.Div(dcc.Graph(
         figure=go.Figure(
             data=[go.Pie(labels=['', ''], values=[100 - score, score],
@@ -212,6 +248,16 @@ def get_score_display(score, label):
 
 
 def get_card_display(value, unit, title, explanation, icon, color="black"):
+    """
+    this function create a card display for the dashboard
+    :param value: the value of the card
+    :param unit: the unit of the value
+    :param title: the title of the card
+    :param explanation: the explanation of the card
+    :param icon: the icon of the card
+    :param color: the color of the card
+    :return: the card display
+    """
     return dbc.Card([
         dbc.CardBody([
             html.H4(html.I(className=icon), className="card-title",
@@ -226,7 +272,14 @@ def get_card_display(value, unit, title, explanation, icon, color="black"):
 
 
 def get_display(config, df_energy, df_finance):
-    results = calculus(config, df_energy, df_finance)
+    """
+    this function create the display of the dashboard
+    :param config: the config file
+    :param df_energy: the energy data frame
+    :param df_finance: the finance data frame
+    :return: the display of the dashboard by summery section, energy section, finance section and pollution section
+    """
+    results = calculate_interesting_numbers(config, df_energy, df_finance)
     grades = grade(results, df_energy, df_finance)
     df_energy = dict_to_dataframe(df_energy)
     df_finance = pd.DataFrame(df_finance)
@@ -239,20 +292,23 @@ def get_display(config, df_energy, df_finance):
                   ], className="d-flex flex-wrap justify-content-center"),
 
         dcc.Graph(figure=get_figure(
-            generate_year_enr_graph(config['START_YEAR'], config['END_YEAR'], df_energy, 'Y'),
+            generate_energy_graph_by_year_range(config['START_YEAR'], config['END_YEAR'], df_energy, 'Y'),
             "Yearly total Energy Distribution",
             "Year",
             "Energy [kWh]"),
             config={"displayModeBar": False}),
-        dcc.Graph(figure=generate_yaerly_precentages_graph(df_energy),
+        dcc.Graph(figure=generate_yaerly_renewable_energy_precentage_graph(df_energy),
                   config={"displayModeBar": False}),
         dcc.Graph(figure=get_figure(
-            [go.Scatter(x=df_finance.index, y=df_finance["is_full"], mode='lines', name=f"High Capacity Usage (>{config['warnings']['max_capacity_threshold']}%)"),
-             go.Scatter(x=df_finance.index, y=df_finance["is_empty"], mode='lines', name=f"Low Capacity Usage (<{config['warnings']['min_capacity_threshold']}%)")],
+            [go.Scatter(x=df_finance.index, y=df_finance["is_full"], mode='lines',
+                        name=f"High Capacity Usage (>{config['warnings']['max_capacity_threshold']}%)"),
+             go.Scatter(x=df_finance.index, y=df_finance["is_empty"], mode='lines',
+                        name=f"Low Capacity Usage (<{config['warnings']['min_capacity_threshold']}%)")],
             f"Usage Profile of Batteries along the Periods",
             "Period",
             "Percentage of Days in the Period [%]"),
-            config={"displayModeBar": False}) if np.any(df_finance["is_full"] != 0) or np.any(df_finance["is_empty"] != 0) else None,
+            config={"displayModeBar": False}) if np.any(df_finance["is_full"] != 0) or np.any(
+            df_finance["is_empty"] != 0) else None,
         dbc.Alert(
             [
                 html.B([html.I(className="bi bi-exclamation-circle-fill mr-2"), "  Warning!"]),
@@ -336,7 +392,11 @@ def get_display(config, df_energy, df_finance):
 
 def create_list(units_dict, units, explain):
     """
-    Create a list of all the values by order from recursive dict
+    Creates a list of units and explanations from a dictionary
+    :param units_dict: dictionary of units and explanations
+    :param units: list of units
+    :param explain: list of explanations
+    :return: units, explain
     """
     for key, val in units_dict.items():
         if isinstance(val, dict):
@@ -349,6 +409,15 @@ def create_list(units_dict, units, explain):
 
 
 def get_parameters(config, units, explain, id=itertools.count(), loc=""):
+    """
+    Creates controls for the user to change the parameters of the senerio
+    :param config: dictionary of the parameters
+    :param units: list of units
+    :param explain: list of explanations
+    :param id: iterator for the id of the controls
+    :param loc: location of the controls
+    :return: list of controls
+    """
     result = []
 
     for parameter, value in config.items():
@@ -366,7 +435,8 @@ def get_parameters(config, units, explain, id=itertools.count(), loc=""):
                                         value=f"{value}",
                                         type="number"
                                     ),
-                                    dbc.InputGroupText("kW" if "solar_panel_purchased" in loc else ("kWh" if "batteries_purchased" in loc else ""))
+                                    dbc.InputGroupText("kW" if "solar_panel_purchased" in loc else (
+                                        "kWh" if "batteries_purchased" in loc else ""))
                                 ]
                             )
                             , width=True)
@@ -403,6 +473,11 @@ def get_parameters(config, units, explain, id=itertools.count(), loc=""):
 
 
 def get_parameter_wrapper(config):
+    """
+    Creates controls for the user to change the parameters of the senerio
+    :param config: dictionary of the parameters
+    :return: list of controls
+    """
     with open(ConfigGetter.units_path) as f:
         units_data = json.load(f)
     units, explain = create_list(units_data, [], [])

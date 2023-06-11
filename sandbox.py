@@ -70,7 +70,5 @@ last_row = pd.DataFrame(df.iloc[-1]).transpose()
 missing_days = (datetime.datetime(year=2050, month=1, day=1) - datetime.datetime(year=start_year, month=1, day=1)).days - len(df.index)
 if missing_days > 0:
     additional_rows = pd.concat([last_row] * missing_days)
-    print(additional_rows)
     df = pd.concat([df, additional_rows], ignore_index=True)
 df['Date'] = pd.date_range(start=datetime.datetime(year=start_year, month=1, day=1), periods=len(df.index), freq='D')
-print(df)

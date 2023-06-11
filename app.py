@@ -90,11 +90,18 @@ ConfigGetter.load_data()
               Output("progress_bar", "label")],
     prevent_intial_call=True
 )
-def func(set_progress, n, config):
-    logging.info("Preprocess - Uploading files")
+def main(set_progress, n, config):
+    """
+    Main function of the application. It is called when the user clicks on the run button.
+    :param set_progress: function to update the progress bar
+    :param n: number of clicks on the run button
+    :param config: configuration of the application
+    :return: parameters of the simulation, energy dataframe, finance and pollution dataframe, display of the results
+    """
     set_progress(("0", "1", "Gathering Data...", "100%"))
     # demand_hourly = DemandHourlyCityData(config['LOCATION']['name'])
     demand_hourly = DemandHourlyCustomYearlyFile('education_city_consumption.csv', 1.028, config['END_YEAR'])
+
     if config["solar"]["datasource"] == "PVGIS":
         solar_rad_hourly = SolarProductionHourlyDataPVGIS(config['LOCATION']['longitude'],
                                                           config['LOCATION']['latitude'],
@@ -104,22 +111,15 @@ def func(set_progress, n, config):
         solar_rad_hourly = SolarRadiationHourlyMonthData()
     set_progress(("1", "1", "Gathering Data...", "100%"))
 
-    logging.info("Preprocess - Files uploaded successfully")
-
-    logging.info("Process - Start simulation")
     manager = Manager(demand_hourly, [],
                       solar_rad_hourly,
                       hourly_strategy.GreedyDailyStrategy(), config)
     output_energy = manager.run_simulator(set_progress)
-    logging.info("Process - End simulation")
 
-    logging.info("Postprocess - Start computing results")
     post_processor = PostProcessor(output_energy, config)
     output_post_processor, total_income = post_processor.run_post_processor(set_progress)
-    print(output_post_processor)
-    logging.info("Postprocess - Start computing results")
 
-    set_progress(("1", "1", "Displaying results...", "100%"))
+    set_progress(("1", "1", "Displaying results... Note: This operation may take a while. Be patient.", "100%"))
 
     return get_parameter_wrapper(config), output_energy.to_dict('records'), output_post_processor.to_dict('records'), \
            get_display(config, output_energy, output_post_processor)
