@@ -12,8 +12,8 @@
     "efficiency": ["","Effiency of the solar panel"],
     "decay_rate": ["","Decay rate of the solar panel efficiency"],
     "area": ["m^2","Area of one solar panel"],
-    "max_power": ["kwh","Maximum power that one solar panel can produce"],
-    "peakpower": ["kwh","Power that one solar panel produce in peak hours"],
+    "max_power": ["kW","Maximum power that one solar panel can produce"],
+    "peakpower": ["kW","Power that one solar panel produce in peak hours"],
     "loss": ["","Energy loss of solar panel"]
   },
   "pollution_rates":

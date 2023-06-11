@@ -25,7 +25,7 @@ application._favicon = "/assets/logo.ico"
 navbar = dbc.NavbarSimple(
     children=[
         dbc.NavItem(dbc.NavLink("Start", href="/start")),
-        dbc.NavItem(dbc.NavLink("Display Result", href="/show-energy-dist")),
+        dbc.NavItem(dbc.NavLink("Display Result", href="/display-result")),
         dbc.NavItem(dbc.NavLink("About Us", href="/about-us"))
     ],
     brand="Hot Sun",
@@ -93,7 +93,8 @@ ConfigGetter.load_data()
 def func(set_progress, n, config):
     logging.info("Preprocess - Uploading files")
     set_progress(("0", "1", "Gathering Data...", "100%"))
-    demand_hourly = DemandHourlyCityData(config['LOCATION']['name'])
+    # demand_hourly = DemandHourlyCityData(config['LOCATION']['name'])
+    demand_hourly = DemandHourlyCustomYearlyFile('education_city_consumption.csv', 1.028, config['END_YEAR'])
     if config["solar"]["datasource"] == "PVGIS":
         solar_rad_hourly = SolarProductionHourlyDataPVGIS(config['LOCATION']['longitude'],
                                                           config['LOCATION']['latitude'],
@@ -115,6 +116,7 @@ def func(set_progress, n, config):
     logging.info("Postprocess - Start computing results")
     post_processor = PostProcessor(output_energy, config)
     output_post_processor, total_income = post_processor.run_post_processor(set_progress)
+    print(output_post_processor)
     logging.info("Postprocess - Start computing results")
 
     set_progress(("1", "1", "Displaying results...", "100%"))

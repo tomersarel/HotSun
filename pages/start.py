@@ -126,7 +126,7 @@ def get_screen(i, period, start, end, location, startegy):
                               dbc.Col(html.H4(html.I(className="bi bi-pin-map-fill")), width=1),
                               dbc.Col(f"{location[0]}/{location[1]}")]),
                          dbc.Row([dbc.Col(html.P("\n\n\n"))]),
-                         dbc.Row([dbc.Col(dbc.Button("Run", id="run1", href="/show-energy-dist"))]),
+                         dbc.Row([dbc.Col(dbc.Button("Run", id="run1", href="/display-result"))]),
                          html.Div(id="initial")
                          ],
                         style={"padding": "20px"})

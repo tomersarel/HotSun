@@ -162,6 +162,7 @@ class PostProcessor():
         panel_opex_prices = prices.get_solar_panel_opex_by_range_of_date(start_date, end_date)
         battery_capex = prices.get_battery_capex_by_range_of_date(start_date, start_date + datetime.timedelta(days=1))[0]
         panel_capex = prices.get_solar_panel_capex_by_range_of_date(start_date, start_date + datetime.timedelta(days=1))[0]
+
         cost_of_buying_electricity = np.dot(simulation_period_output.get_electricity_buying(), buying_prices)
 
         cost_of_batteries = batteries_baught * battery_capex + \

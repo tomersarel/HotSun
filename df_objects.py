@@ -37,6 +37,48 @@ class DemandHourly(ABC):
         pass
 
 
+class DemandHourlyCustomYearlyFile(DemandHourly):
+    def __init__(self, file, growth_rate, end_year):
+        df = pd.read_csv(f"data/{file}", header=[0])
+        df['Date'] = pd.to_datetime(df['Date'], dayfirst=True)
+        df.set_index("Date", inplace=True)
+        start_year = df.index[0].year
+        curr_year = start_year
+        dfs = []
+        while curr_year < end_year:
+            dfs.append(df)
+            df = df.multiply(growth_rate)
+            curr_year += 1
+
+        df = pd.concat(dfs, ignore_index=True)
+        last_row = pd.DataFrame(df.iloc[-1]).transpose()
+        missing_days = (datetime.datetime(year=end_year, month=1, day=1) - datetime.datetime(year=start_year, month=1,
+                                                                                             day=1)).days - \
+                       len(df.index)
+        if missing_days > 0:
+            additional_rows = pd.concat([last_row] * missing_days)
+            df = pd.concat([df, additional_rows], ignore_index=True)
+
+        df['Date'] = pd.date_range(start=datetime.datetime(year=start_year, month=1, day=1), periods=len(df.index),
+                                   freq='D')
+        self.df = df
+
+    def get_demand_hourly_by_range_of_date(self, start_date: datetime.datetime, end_date: datetime.datetime):
+        """
+        return the predicted consumption in given range of date (including start_date excluding end_date)
+        :param end_date: the start date
+        :param start_date: the end date
+        :return: arr of the power consumption at that date range by hour
+        """
+        # make sure the dates are at the beginning of the day
+        start_date = start_date.replace(hour=0)
+        end_date = end_date.replace(hour=0)
+
+        period = self.df[(self.df['Date'] >= start_date) & (self.df['Date'] < end_date)].to_numpy()
+
+        return [day[:-1] for day in period]  # remove Date col
+
+
 class DemandHourlyStateData(DemandHourly):
     """
     This class implements DemandHourly (kWh) for state data
@@ -94,7 +136,7 @@ class DemandHourlyCityData(DemandHourly):
 
         period = self.df[(self.df['Date'] >= start_date) & (self.df['Date'] < end_date)].to_numpy()
 
-        return [day[1:]*self.city_ratio for day in period]  # remove Date col
+        return [day[1:] * self.city_ratio for day in period]  # remove Date col
 
 
 class SolarRadiationHourly(ABC):
@@ -173,11 +215,10 @@ class SolarProductionHourlyDataPVGIS(SolarRadiationHourly):
                 for line in str(response.content).split(r"\r\n")[10:-10]:
                     writer.writerow(line.split(','))
 
-        titles = ['time', 'P', 'G(i)', 'H_sun',	'T2m', 'WS10m', 'Int']
+        titles = ['time', 'P', 'G(i)', 'H_sun', 'T2m', 'WS10m', 'Int']
 
         self.df = pd.read_csv(file_path, header=[0])[['time', 'P']]
         self.df['time'] = pd.to_datetime(self.df['time'], format="%Y%m%d:%H%M")
-
 
     def get_solar_rad_daily_by_range_of_date(self, start_date: datetime.datetime, end_date: datetime.datetime):
         """
@@ -194,11 +235,13 @@ class SolarProductionHourlyDataPVGIS(SolarRadiationHourly):
         while curr_date < end_date:
             year = curr_date.year
             curr_date = curr_date.replace(year=2016)
-            production_daily_arr.append(self.df[(self.df["time"] >= curr_date) & (self.df["time"] < curr_date + datetime.timedelta(days=1))]['P'].to_numpy())  # remove the month index
+            production_daily_arr.append(
+                self.df[(self.df["time"] >= curr_date) & (self.df["time"] < curr_date + datetime.timedelta(days=1))][
+                    'P'].to_numpy())  # remove the month index
             curr_date = curr_date.replace(year=year)
             curr_date += datetime.timedelta(days=1)
 
-        return np.array(production_daily_arr)/1000
+        return np.array(production_daily_arr) / 1000
 
 
 class Cost(ABC):
@@ -574,6 +617,7 @@ class HourlySimulationDataOfPeriod(PeriodsSimulation):
 
     def get_capacity(self):
         return self.daily_max_df["AllBatteries"].to_numpy()
+
 
 def get_town_loc_by_name():
     df = pd.read_csv("data/cities.csv", header=[0])

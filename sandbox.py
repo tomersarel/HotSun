@@ -1,7 +1,9 @@
+import pandas as pd
+
 from imports import *
 import dash_html_components as html
 
-# Initialize the Dash app
+"""# Initialize the Dash app
 app = dash.Dash(__name__)
 
 # Define the app layout
@@ -33,8 +35,42 @@ app.layout = html.Div(
 
         )
     ]
-)
+)"""
 
-# Run the app
-if __name__ == '__main__':
-    app.run_server(debug=True)
+"""df = pd.read_csv("data/highschool_consumption.csv")
+df['Date'] = pd.to_datetime(df['Date'], dayfirst=True)
+df.set_index("Date", inplace=True)
+curr_year = df.index[0].year
+dfs = [df]
+while curr_year < 2050:
+    df.index = df.index + pd.DateOffset(years=1)
+    df = df * 1.05
+    dfs.append(df)
+    curr_year += 1
+df = pd.concat(dfs)
+df.index = df.index - pd.DateOffset(years=1)
+df.reindex()
+df.fillna(method='ffill')
+print(df)"""
+
+
+df = pd.read_csv("data/highschool_consumption.csv")
+df['Date'] = pd.to_datetime(df['Date'], dayfirst=True)
+df.set_index("Date", inplace=True)
+start_year = df.index[0].year
+curr_year = start_year
+dfs = []
+while curr_year < 2050:
+    dfs.append(df)
+    df = df.multiply(1.05)
+    curr_year += 1
+
+df = pd.concat(dfs, ignore_index=True)
+last_row = pd.DataFrame(df.iloc[-1]).transpose()
+missing_days = (datetime.datetime(year=2050, month=1, day=1) - datetime.datetime(year=start_year, month=1, day=1)).days - len(df.index)
+if missing_days > 0:
+    additional_rows = pd.concat([last_row] * missing_days)
+    print(additional_rows)
+    df = pd.concat([df, additional_rows], ignore_index=True)
+df['Date'] = pd.date_range(start=datetime.datetime(year=start_year, month=1, day=1), periods=len(df.index), freq='D')
+print(df)

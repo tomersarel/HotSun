@@ -165,7 +165,7 @@ def calculus(config, df_energy, df_finance):
         'co2_saved': [co2_saved, "t", "Pollution Saved",
                       "Total amount of CO2 pollution saved by producing energy by using solar panels.",
                       "mdi:molecule-co2", "#808080"],
-        'savings': [savings, "$", "Savings",
+        'savings': [savings, "₪", "Savings",
                     "Amount of money saved by by using energy produced by the solar panels instead of buying it.",
                     "fluent-mdl2:savings", "#808080"]
     }
@@ -256,7 +256,7 @@ def get_display(config, df_energy, df_finance):
         dbc.Alert(
             [
                 html.B([html.I(className="bi bi-exclamation-circle-fill mr-2"), "  Warning!"]),
-                f" In some periods your battery are at very high capacity (>{config['warnings']['max_capacity_threshold']}%). Consider adding more storage in the purchase strategy."
+                f" In some periods the batteries are at very high capacity (>{config['warnings']['max_capacity_threshold']}%). Consider adding more storage in the purchase strategy."
             ],
             color="warning"
         )
@@ -264,7 +264,7 @@ def get_display(config, df_energy, df_finance):
         dbc.Alert(
             [
                 html.B([html.I(className="bi bi-exclamation-circle-fill mr-2"), "  Warning!"]),
-                f" In some periods your battery are at very low capacity (<{config['warnings']['min_capacity_threshold']}%). Consider decrease amount of storage in the purchase strategy."
+                f" In some periods the batteries are at very low capacity (<{config['warnings']['min_capacity_threshold']}%). Consider decrease amount of storage in the purchase strategy."
             ],
             color="warning"
         )
@@ -286,7 +286,7 @@ def get_display(config, df_energy, df_finance):
                                                                    marker={'color': 'green', 'line.width': 0}),
                                                             "Total Cost per Period",
                                                             "Period",
-                                                            "Cost per Period [$]"),
+                                                            "Cost per Period [₪]"),
                                           config={"displayModeBar": False}),
                                 dcc.Graph(id='yearlyProfitGraph',
                                           figure=get_figure(go.Bar(x=df_finance.index, y=df_finance['periodic_profit'],
@@ -294,7 +294,7 @@ def get_display(config, df_energy, df_finance):
                                                                    marker={'color': 'green', 'line.width': 0}),
                                                             "Total Profit per Period",
                                                             "Period",
-                                                            "Profit per Period [$]"),
+                                                            "Profit per Period [₪]"),
                                           config={"displayModeBar": False})
                                 ])
 
