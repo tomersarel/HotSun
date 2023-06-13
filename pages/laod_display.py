@@ -18,10 +18,14 @@ roundbutton = {
     "width": 25,
     "margin": 0,
 }
-energy_columns = ['Batteries', 'Solar', 'Buying', 'Selling', 'Lost', 'Storaged']
+energy_columns = ['Batteries', 'Solar', 'Buying', 'Selling', 'Lost', 'Stored']
 pollution_columns_greenhouse_gases = ['periodic_C02']
 pollution_columns_other = ['periodic_SOx', 'periodic_PMx']
-colors = {"Solar": "#ffe205", "Batteries": "#d4d4d4", "Buying": "#ec4141", "Selling": "#5fbb4e", "Storaged": "#9edbf9",
+cost_columns = ['buying_electricity_cost',
+                'periodic_batteries_capex_cost', 'periodic_batteries_opex_cost',
+                'periodic_panels_capex_cost', 'periodic_panels_opex_cost']
+profit_columns = ['periodic_selling_profit', 'periodic_didnt_buy']
+colors = {"Solar": "#ffe205", "Batteries": "#d4d4d4", "Buying": "#ec4141", "Selling": "#5fbb4e", "Stored": "#9edbf9",
           "Lost": "gray", 'periodic_C02': "red", 'periodic_SOx': "blue", 'periodic_PMx': "gray"}
 
 
@@ -112,10 +116,8 @@ def generate_yaerly_renewable_energy_precentage_graph(df_energy):
     yerly_figure.update_layout(shapes=[
         go.layout.Shape(type='line', y0=95, x0=min(yearly.index), x1=max(yearly.index), y1=95,
                         line=dict(color='#808080', dash='dash')),
-        go.layout.Shape(type='line', y0=50, x0=min(yearly.index), x1=max(yearly.index), y1=50,
-                        line=dict(color='#979797', dash='dash')),
         go.layout.Shape(type='line', y0=30, x0=min(yearly.index), x1=max(yearly.index), y1=30,
-                        line=dict(color='#AEAEAE', dash='dash'))
+                        line=dict(color='#808080', dash='dash'))
     ],
         yaxis=dict(range=[0, 100]),
         annotations=[
@@ -127,15 +129,9 @@ def generate_yaerly_renewable_energy_precentage_graph(df_energy):
             ),
             go.layout.Annotation(
                 x=yearly.index.min(), y=25, xanchor="left",
-                text='Israel national goal for 2050',
+                text='Israel national goal for 2030',
                 showarrow=False,
-                font=dict(size=12, color='#AEAEAE')
-            ),
-            go.layout.Annotation(
-                x=yearly.index.min(), y=45, xanchor="left",
-                text='Tel-Aviv goal for 2050',
-                showarrow=False,
-                font=dict(size=12, color='#979797')
+                font=dict(size=12, color='#808080')
             )
         ]
     )
@@ -177,20 +173,24 @@ def calculate_interesting_numbers(config, df_energy, df_finance):
 
     green_energy = df_energy['Solar'].sum() + df_energy['Batteries'].sum()
     # calculate CO2 pollution saved
-    co2_saved = round(green_energy * config["pollution_rates"]["CO2"] / 1e6)
+    co2_saved = round(green_energy * config["pollution_rates"]["CO2"] / 1e9, 2)
 
-    savings = round(df_finance['periodic_didnt_buy'].sum())
+    savings = round(df_finance['periodic_didnt_buy'].sum() -
+                    df_finance['periodic_batteries_capex_cost'].sum() -
+                    df_finance['periodic_batteries_opex_cost'].sum() -
+                    df_finance['periodic_panels_capex_cost'].sum() -
+                    df_finance['periodic_panels_opex_cost'].sum())
 
     # create a dictionary with all the calculated values
     results = {
         'solar_percentage': [solar_percentage, "%", "Solar Energy",
-                             "Percentage of solar energy out of the total energy consumption in the last year.",
+                             "Renewable energy usage out of the total energy consumption in the last year of the scenario.",
                              "ic:outline-solar-power", "#808080"],
-        'co2_saved': [co2_saved, "t", "Pollution Saved",
-                      "Total amount of CO2 pollution saved by producing energy by using solar panels.",
+        'co2_saved': [co2_saved, "kt", "Pollution Saved",
+                      "CO2 pollution saved by converting to solar energy.",
                       "mdi:molecule-co2", "#808080"],
         'savings': [savings, "₪", "Savings",
-                    "Amount of money saved by by using energy produced by the solar panels instead of buying it.",
+                    "Money saved by using solar energy, after taking into account the capex and the opex of the system.",
                     "fluent-mdl2:savings", "#808080"]
     }
 
@@ -205,9 +205,9 @@ def grade(grades, df_energy, df_finance):
     :param df_finance: the finance data frame
     :return: the environmental grade, the financial grade and the total grade
     """
-    profit = df_finance['periodic_profit'].sum()
-    cost = df_finance['periodic_cost'].sum()
-    balance = df_finance['periodic_profit'].sum() - df_finance['periodic_cost'].sum()
+    profit = sum([df_finance[col].sum() for col in profit_columns])
+    cost = sum([df_finance[col].sum() for col in cost_columns])
+    balance = profit - cost
     financial = round((0.5 + 0.5 * (balance / profit if balance > 0 else balance / cost)) * 100)
     environmental = grades['solar_percentage'][0]
     return [environmental, round((environmental + financial) / 2), financial]
@@ -234,7 +234,7 @@ def get_score_display(score, label):
                          )],
             layout=go.Layout(annotations=[go.layout.Annotation(text=f"{score}%", showarrow=False,
                                                                font=dict(size=32, color='black'))],
-                             margin=dict(t=0, b=0))
+                             margin=dict(t=0, b=1))
         ),
         config={
             "scrollZoom": False,
@@ -265,10 +265,10 @@ def get_card_display(value, unit, title, explanation, icon, color="black"):
             html.Div(DashIconify(icon=icon, color=color, width=108, height=108,
                                  style={"display": "flex", "justify-content": "center"}, className="card-title"),
                      className="d-flex align-items-center justify-content-center"),
-            html.H1(f"{value}{unit}", className="card-title", style={"text-align": "center", "font-size": 48}),
+            html.H1(f"{'{:,}'.format(value)} {unit}", className="card-title", style={"text-align": "center", "font-size": 48}),
             html.H4(title, className="card-title", style={"text-align": "center"}),
             html.P(explanation, className="card-text")
-        ])], style={"width": "18rem"}, className="mx-2 my-2")
+        ])], style={"width": "20rem"}, className="mx-2 my-2")
 
 
 def get_display(config, df_energy, df_finance):
@@ -337,17 +337,18 @@ def get_display(config, df_energy, df_finance):
                                dcc.Graph(id='dailyGraph', style={"display": "None"}, config={"displayModeBar": False})
                                ])
     display_finance = html.Div([dcc.Graph(id='yearlyCostGraph',
-                                          figure=get_figure(go.Bar(x=df_finance.index, y=df_finance['periodic_cost'],
-                                                                   name='cost',
-                                                                   marker={'color': 'green', 'line.width': 0}),
+                                          figure=get_figure([go.Bar(x=df_finance.index, y=df_finance[col],
+                                                                    name=col.replace('_', " ").title(),
+                                                                    marker={'line.width': 0}) for col in cost_columns],
                                                             "Total Cost per Period",
                                                             "Period",
                                                             "Cost per Period [₪]"),
                                           config={"displayModeBar": False}),
                                 dcc.Graph(id='yearlyProfitGraph',
-                                          figure=get_figure(go.Bar(x=df_finance.index, y=df_finance['periodic_profit'],
-                                                                   name='cost',
-                                                                   marker={'color': 'green', 'line.width': 0}),
+                                          figure=get_figure([go.Bar(x=df_finance.index, y=df_finance[col],
+                                                                    name=col.replace('_', " ").title(),
+                                                                    marker={'line.width': 0}) for col in
+                                                             profit_columns],
                                                             "Total Profit per Period",
                                                             "Period",
                                                             "Profit per Period [₪]"),
@@ -356,23 +357,23 @@ def get_display(config, df_energy, df_finance):
 
     display_pollution = html.Div([dcc.Graph(id='yearlyPollutionGraph',
                                             figure=get_figure(
-                                                [go.Bar(x=df_finance.index, y=df_finance[col], name=col,
+                                                [go.Bar(x=df_finance.index, y=df_finance[col], name=col.replace('_', " ").title(),
                                                         marker={'color': colors[col], 'line.width': 0})
                                                  for index, col in enumerate(pollution_columns_greenhouse_gases)],
-                                                "Greenhouse Gases Pollution per Period",
+                                                "CO2 Pollutes per Period",
                                                 "Period",
-                                                "Pollutes per Period [kg]",
+                                                "Pollutes [kg]",
                                                 bar_mode="group"
                                             ),
                                             config={"displayModeBar": False}),
                                   dcc.Graph(id='yearlyPollutionGraph',
                                             figure=get_figure(
-                                                [go.Bar(x=df_finance.index, y=df_finance[col], name=col,
+                                                [go.Bar(x=df_finance.index, y=df_finance[col], name=col.replace('_', " ").title(),
                                                         marker={'color': colors[col], 'line.width': 0})
                                                  for index, col in enumerate(pollution_columns_other)],
-                                                "Other Gases Pollution per Period",
+                                                "Other Gases Pollutes per Period",
                                                 "Period",
-                                                "Pollutes per Period [kg]",
+                                                "Pollutes [kg]",
                                                 bar_mode="group"
                                             ),
                                             config={"displayModeBar": False})

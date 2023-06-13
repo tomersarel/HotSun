@@ -219,6 +219,10 @@ class SolarProductionHourlyDataPVGIS(SolarRadiationHourly):
 
         self.df = pd.read_csv(file_path, header=[0])[['time', 'P']]
         self.df['time'] = pd.to_datetime(self.df['time'], format="%Y%m%d:%H%M")
+        # israel is at (GMT+3)
+        self.df['time'] = self.df['time'] + pd.DateOffset(hours=3)
+        missing_hours = pd.DataFrame({'time': pd.date_range('2016-01-01', periods=3, freq='H'), 'P': [0, 0, 0]})
+        self.df = missing_hours.append(self.df)
 
     def get_solar_rad_daily_by_range_of_date(self, start_date: datetime.datetime, end_date: datetime.datetime):
         """
@@ -334,8 +338,10 @@ class HourlyPricesData(Cost):
 
         self.df = pd.read_csv("data/ElectricityPrices.csv", header=[0])
         self.df['Date'] = pd.to_datetime(self.df['Date'], dayfirst=True)
-        self.df['BatteryCapex'] /= 365 * 24
-        self.df['SolarPanelCapex'] /= 365 * 24
+        self.df['BuyingElectricityPrice'] /= 1000
+        self.df['SellingElectricityPrice'] /= 1000
+        self.df['BatteryOpex'] /= 365 * 24
+        self.df['SolarPanelOpex'] /= 365 * 24
 
     def get_start_and_end_hour(self, start_date: datetime.datetime,
                                end_date: datetime.datetime):
@@ -359,7 +365,6 @@ class HourlyPricesData(Cost):
         :param start_date: the end date
         :return: arr of the solar radiation at that date range by hour
         """
-        logging.info("df objects [electricity prices] - converts the csv to hourly buying prices in the given dates")
         start_date = start_date.replace(hour=0)
         end_date = end_date.replace(hour=0)
 

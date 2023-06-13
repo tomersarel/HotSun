@@ -14,7 +14,7 @@ class PeriodicSimulation:
         self.solar_rad = solar_rad
         self.daily_simulator = daily_simulator
         self.result = pd.DataFrame(
-            columns=['Date', 'Batteries','AllBatteriesCapacity','AllBatteriesCharge','Solar', 'Buying', 'Selling', 'Lost', 'Storaged', "NewBatteries",
+            columns=['Date', 'Batteries','AllBatteriesCapacity','AllBatteriesCharge','Solar', 'Buying', 'Selling', 'Lost', 'Stored', "NewBatteries",
                      "AllBatteries", "NewSolarPanels", "AllSolarPanels"])
 
 

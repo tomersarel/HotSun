@@ -67,19 +67,12 @@ class GreedyDailyStrategy(DailyStrategy):
             
         result = pd.DataFrame({'Date': [state.current_date + datetime.timedelta(hours=i) for i in range(24)],
                               'Batteries': batteries, 'Solar': solar, 'Buying': buying, 'Selling': selling,
-                              'Lost': [0] * 24, 'Storaged': storaged,
+                              'Lost': [0] * 24, 'Stored': storaged,
                               "NewBatteries": [new_batteries_energy] * 24,
                               "AllBatteries": batteries_capacity,
                               "AllBatteriesCharge": batteries_charge,
                               "NewSolarPanels": [new_panels_power] * 24,
                               "AllSolarPanels": [all_panels_power] * 24})
-        # result = pd.DataFrame({'Date': [state.current_date + datetime.timedelta(hours=i) for i in range(24)],
-        #                        'Batteries': 1, 'Solar': 1, 'Buying': 1, 'Selling': 1,
-        #                        'Lost': [0] * 24, 'Storaged': 1,
-        #                        "NewBatteries": [1] * 24,
-        #                        "AllBatteries": [i + 1 for i in range(24)],
-        #                        "NewSolarPanels": [1] * 24,
-        #                        "AllSolarPanels": [i + 1 for i in range(24)]})
 
         return result, state
 

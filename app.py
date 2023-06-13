@@ -100,7 +100,7 @@ def main(set_progress, n, config):
     """
     set_progress(("0", "1", "Gathering Data...", "100%"))
     # demand_hourly = DemandHourlyCityData(config['LOCATION']['name'])
-    demand_hourly = DemandHourlyCustomYearlyFile('education_city_consumption.csv', 1.028, config['END_YEAR'])
+    demand_hourly = DemandHourlyCustomYearlyFile('highschool_consumption.csv', 1.028, config['END_YEAR'])
 
     if config["solar"]["datasource"] == "PVGIS":
         solar_rad_hourly = SolarProductionHourlyDataPVGIS(config['LOCATION']['longitude'],
@@ -109,6 +109,7 @@ def main(set_progress, n, config):
                                                           config['solar']['loss'])
     else:
         solar_rad_hourly = SolarRadiationHourlyMonthData()
+
     set_progress(("1", "1", "Gathering Data...", "100%"))
 
     manager = Manager(demand_hourly, [],
@@ -117,7 +118,7 @@ def main(set_progress, n, config):
     output_energy = manager.run_simulator(set_progress)
 
     post_processor = PostProcessor(output_energy, config)
-    output_post_processor, total_income = post_processor.run_post_processor(set_progress)
+    output_post_processor = post_processor.run_post_processor(set_progress)
 
     set_progress(("1", "1", "Displaying results... Note: This operation may take a while. Be patient.", "100%"))
 

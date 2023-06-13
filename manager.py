@@ -12,6 +12,7 @@ from typing import Callable, List
 from imports import *
 from tqdm import tqdm
 from state import State
+import solar_panel
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'config.json')
 
@@ -52,6 +53,7 @@ class Manager:
         self.hourly_solar_radiation = hourly_solar_radiation
         self.daily_strategy = daily_strategy
         self.current_state = State(self.start_date)
+        self.current_state.solar_panels.append(solar_panel.SolarPanel(5, config))
         logging.info(f"Manager was built successfully.")
 
 
