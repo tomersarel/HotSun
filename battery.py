@@ -9,12 +9,12 @@ from config_manager import ConfigGetter
 class Battery:
     THRESHOLD = 10 ** -10
 
-    def __init__(self, amount: int, date: datetime.datetime, config):
+    def __init__(self, amount_kWh: float, date: datetime.datetime, config):
         logging.basicConfig(filename="battery_logger.log", level=logging.DEBUG)
 
         try:
             config_battery = config['battery']
-            self.capacity = config_battery['capacity'] * amount
+            self.capacity = amount_kWh
             self.lifetime = config_battery['lifetime']
             self.current_energy = 0
             self.efficiency = config_battery['efficiency']

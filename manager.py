@@ -12,6 +12,7 @@ from typing import Callable, List
 from imports import *
 from tqdm import tqdm
 from state import State
+import solar_panel
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), 'config.json')
 
@@ -24,7 +25,6 @@ class Manager:
 
     def __init__(self,
                  hourly_electricity_demand: DemandHourly,
-                 objects_period_strategy: list[period_strategy.PeriodStrategy],
                  periodic_available_area: np.array,
                  hourly_solar_radiation: SolarRadiationHourly,
                  daily_strategy: Callable, config: dict):
@@ -45,11 +45,15 @@ class Manager:
         self.periods_amount = (end_date - self.start_date).days // self.periods_length_in_days
         self.hourly_electricity_demand = hourly_electricity_demand
         strategy = pd.DataFrame.from_dict(config["STRATEGY"])
-        self.objects_period_strategy = [period_strategy.PeriodStrategy(row["solar_panel_purchased"], row["batteries_purchased"]) for index, row in strategy.iterrows()]
+        self.objects_period_strategy = [period_strategy.PeriodStrategy(row["solar_panel_purchased"],
+                                                                       row["batteries_purchased"],
+                                                                       config)
+                                        for index, row in strategy.iterrows()]
         self.periodic_available_area = periodic_available_area
         self.hourly_solar_radiation = hourly_solar_radiation
         self.daily_strategy = daily_strategy
         self.current_state = State(self.start_date)
+        self.current_state.solar_panels.append(solar_panel.SolarPanel(5, config))
         logging.info(f"Manager was built successfully.")
 
 
@@ -61,8 +65,7 @@ class Manager:
         logging.info(f"Manager: starts simulation")
         output = []
 
-        bar = tqdm(range(self.periods_amount))
-        for period_i in bar:
+        for period_i in tqdm(range(self.periods_amount)):
             logging.info(f"Manager: enters {period_i} period of the simulation.")
             # create the period simulation object
             demand, solar_rad = self.slice_data_for_period(period_i)

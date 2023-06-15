@@ -2,7 +2,7 @@ from config_manager import ConfigGetter
 
 
 class SolarPanel:
-    def __init__(self, amount: int, config: dict):
+    def __init__(self, amount: float, config: dict):
         solar_config = config['solar']
         self.efficiency = solar_config['efficiency']
         self.lifetime = solar_config['lifetime']

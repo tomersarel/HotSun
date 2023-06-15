@@ -217,10 +217,11 @@ class GreedyDailyStrategy(DailyStrategy):
         buying = [0] * 24
         selling = [0] * 24
         storaged = [0] * 24
+        batteries_charge = [0] * 24
+        batteries_capacity = [0] * 24
         state.batteries.sort(key=lambda battery: battery.efficiency, reverse=True)
 
         for hour in range(24):
-
             hourly_demand = demand[hour]
             solar_production = sum([panel.calc_energy_gen_hourly(solar_rad[hour])
                                     for panel in state.solar_panels])
@@ -245,25 +246,31 @@ class GreedyDailyStrategy(DailyStrategy):
                     batteries[hour] += discharged
                     battery_index += 1
                     buying[hour] = to_supply
+
+            batteries_charge[hour] = sum([battery.current_energy for battery in state.batteries])
+            batteries_capacity[hour] = sum([battery.capacity for battery in state.batteries])
+
             state.current_date += datetime.timedelta(hours=1)
 
         new_batteries_energy = state.batteries[-1].capacity
         new_panels_power = state.solar_panels[-1].amount * state.solar_panels[-1].max_power
-
+        all_panels_power = sum([panel.amount for panel in state.solar_panels])
+        
+        
+        """total_charge = 0
+        total_capacity = 0
+        for battery in state.batteries:
+            total_charge += battery.current_energy
+            total_capacity += battery.capacity"""
+            
         result = pd.DataFrame({'Date': [state.current_date + datetime.timedelta(hours=i) for i in range(24)],
                               'Batteries': batteries, 'Solar': solar, 'Buying': buying, 'Selling': selling,
-                              'Lost': [0] * 24, 'Storaged': storaged,
+                              'Lost': [0] * 24, 'Stored': storaged,
                               "NewBatteries": [new_batteries_energy] * 24,
-                              "AllBatteries": [len(state.batteries)] * 24,
+                              "AllBatteries": batteries_capacity,
+                              "AllBatteriesCharge": batteries_charge,
                               "NewSolarPanels": [new_panels_power] * 24,
-                              "AllSolarPanels": [len(state.solar_panels)] * 24})
-        # result = pd.DataFrame({'Date': [state.current_date + datetime.timedelta(hours=i) for i in range(24)],
-        #                        'Batteries': 1, 'Solar': 1, 'Buying': 1, 'Selling': 1,
-        #                        'Lost': [0] * 24, 'Storaged': 1,
-        #                        "NewBatteries": [1] * 24,
-        #                        "AllBatteries": [i + 1 for i in range(24)],
-        #                        "NewSolarPanels": [1] * 24,
-        #                        "AllSolarPanels": [i + 1 for i in range(24)]})
+                              "AllSolarPanels": [all_panels_power] * 24})
 
         return result, state
 

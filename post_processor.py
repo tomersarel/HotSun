@@ -2,6 +2,7 @@ import datetime
 import logging
 import pprint
 import unittest
+from typing import Dict
 
 # import numpy
 import numpy as np
@@ -16,10 +17,19 @@ from df_objects import HourlyPricesData, HourlyEmmision, HourlySimulationDataOfP
 
 
 class PostProcessor():
-    DATA_TYPES_AMOUNT = 3
-    PERIODIC_COST_INDEX = 0
-    PERIODIC_PROFIT_INDEX = 1
-    PERIODIC_POLLUTE_INDEX = 2
+    DATA_TYPES_AMOUNT = 12
+    PERIODIC_COST_BUYING_ELECTRICITY_INDEX = 0
+    PERIODIC_COST_BATTERIES_CAPEX_INDEX = 1
+    PERIODIC_COST_BATTERIES_OPEX_INDEX = 2
+    PERIODIC_COST_PANELS_CAPEX_INDEX = 3
+    PERIODIC_COST_PANELS_OPEX_INDEX = 4
+    PERIODIC_SELLING_PROFIT_INDEX = 5
+    PERIODIC_DIDNT_BUY_INDEX = 6
+    PERIODIC_CO2_INDEX = 7
+    PERIODIC_SOx_INDEX = 8
+    PERIODIC_PMx_INDEX = 9
+    PERIODIC_FULL_WARNING = 10
+    PERIODIC_LOW_WARNING = 11
 
     def __init__(self, simulation_output: pandas.DataFrame, config):
         time_string_format = config["TIME_FORMAT"]
@@ -29,49 +39,105 @@ class PostProcessor():
         self.periods_amount = (end_date - self.start_date).days // self.periods_length_in_days
         self.simulation_output = simulation_output
         logging.info(f"PostProcessor was built successfully.")
+        self.pollution_rates = config["pollution_rates"]
+        self.high_capacity_threshold = config["warnings"]["max_capacity_threshold"] / 100
+        self.low_capacity_threshold = config["warnings"]["min_capacity_threshold"] / 100
+        self.strategy = config["STRATEGY"]
 
     def get_period_dates_by_index(self, period_i: int) -> (datetime.datetime, datetime.datetime):
         period_len = datetime.timedelta(days=self.periods_length_in_days)
         start_date = self.start_date + period_i * period_len + datetime.timedelta(days=1)
-        end_date = start_date + period_len - datetime.timedelta(hours=1)
+        end_date = start_date + period_len  # - datetime.timedelta(hours=1)
         return start_date, end_date
 
     def run_post_processor(self, set_progress):
-        total_benefit = 0
         periodic_data = np.zeros(shape=(self.periods_amount, self.DATA_TYPES_AMOUNT))
         prices = HourlyPricesData()
         emission_rate = HourlyEmmision()
         for period_i in tqdm(range(self.periods_amount), desc="Process Simulation Results...", ):
-            logging.info(f"PostProcessor: enters {period_i} period of the post processor.")
-            # loads the period data
             start_date, end_date = self.get_period_dates_by_index(period_i)
             simulation_period_output = HourlySimulationDataOfPeriod(self.simulation_output, start_date, end_date)
-            # calculates cost, profit and pollution
-            periodic_data[period_i][self.PERIODIC_COST_INDEX] = self.calculate_periodic_cost(simulation_period_output,
-                                                                                             prices,
-                                                                                             start_date,
-                                                                                             end_date)
-            periodic_data[period_i][self.PERIODIC_PROFIT_INDEX] = self.calculate_periodic_profit(
+
+            periodic_data[period_i][self.PERIODIC_COST_BUYING_ELECTRICITY_INDEX], \
+                periodic_data[period_i][self.PERIODIC_COST_BATTERIES_CAPEX_INDEX], \
+                periodic_data[period_i][self.PERIODIC_COST_BATTERIES_OPEX_INDEX], \
+                periodic_data[period_i][self.PERIODIC_COST_PANELS_CAPEX_INDEX], \
+                periodic_data[period_i][self.PERIODIC_COST_PANELS_OPEX_INDEX] = \
+                self.calculate_periodic_cost(simulation_period_output,
+                                             prices,
+                                             start_date,
+                                             end_date,
+                                             self.strategy["solar_panel_purchased"][str(period_i)],
+                                             self.strategy["batteries_purchased"][str(period_i)])
+            periodic_data[period_i][self.PERIODIC_SELLING_PROFIT_INDEX] = self.calculate_periodic_profit(
                 simulation_period_output,
                 prices,
                 start_date,
                 end_date)
-            periodic_data[period_i][self.PERIODIC_POLLUTE_INDEX] = self.calculate_periodic_pollute(
+
+            periodic_data[period_i][self.PERIODIC_DIDNT_BUY_INDEX] = self.calculate_periodic_didnt_buy(
+                simulation_period_output,
+                prices,
+                start_date,
+                end_date)
+
+            total_pollute = self.calculate_periodic_pollute(
                 simulation_period_output,
                 emission_rate,
                 start_date,
                 end_date)
-            total_benefit += periodic_data[period_i][self.PERIODIC_PROFIT_INDEX] - \
-                             periodic_data[period_i][self.PERIODIC_COST_INDEX]
+            periodic_data[period_i][self.PERIODIC_CO2_INDEX] = total_pollute["CO2"]
+            periodic_data[period_i][self.PERIODIC_SOx_INDEX] = total_pollute["SOx"]
+            periodic_data[period_i][self.PERIODIC_PMx_INDEX] = total_pollute["PMx"]
+            periodic_data[period_i][self.PERIODIC_FULL_WARNING] = self.is_full_charge(simulation_period_output)
+            periodic_data[period_i][self.PERIODIC_LOW_WARNING] = self.is_empty_charge(simulation_period_output)
 
-            set_progress((str(period_i + 1), str(self.periods_amount), "Calculate incomes and pollutes...", f"{round((period_i + 1) / self.periods_amount * 100)}%"))
+            set_progress((str(period_i + 1), str(self.periods_amount), "Calculate incomes and pollutes...",
+                          f"{round((period_i + 1) / self.periods_amount * 100)}%"))
 
-        return pd.DataFrame(periodic_data, columns=['periodic_cost', 'periodic_profit', 'periodic_pollute']), total_benefit
+        df = pd.DataFrame(periodic_data,
+                          columns=['buying_electricity_cost',
+                                   'periodic_batteries_capex_cost', 'periodic_batteries_opex_cost',
+                                   'periodic_panels_capex_cost', 'periodic_panels_opex_cost',
+                                   'periodic_selling_profit', 'periodic_didnt_buy', 'periodic_C02',
+                                   'periodic_SOx', 'periodic_PMx', 'is_full', 'is_empty'])
+        df['Date'] = [self.start_date + datetime.timedelta(days=self.periods_length_in_days * i) for i in
+                      range(self.periods_amount)]
+        df = df.set_index('Date')
+        return df
+
+    def is_full_charge(self, simulation_period_output: HourlySimulationDataOfPeriod):
+        """
+        checks if the batteries are fully charged in the end of the period
+        :param simulation_period_output: an object which contains the simulation output of the current period
+        :return: True if the batteries are fully charged, False otherwise
+        """
+        capacity = simulation_period_output.get_capacity()
+        charge = simulation_period_output.get_charge()
+        arr = charge[capacity > 0] / capacity[capacity > 0]
+        precentage_of_high_capacity_days = len(
+            arr[arr >= self.high_capacity_threshold]) / self.periods_length_in_days * 100
+        return precentage_of_high_capacity_days
+
+    def is_empty_charge(self, simulation_period_output: HourlySimulationDataOfPeriod):
+        """
+        checks if the batteries are fully charged in the end of the period
+        :param simulation_period_output: an object which contains the simulation output of the current period
+        :return: True if the batteries are fully charged, False otherwise
+        """
+        capacity = simulation_period_output.get_capacity()
+        charge = simulation_period_output.get_charge()
+        arr = charge[capacity > 0] / capacity[capacity > 0]
+        precentage_of_low_capacity_days = len(
+            arr[arr <= self.low_capacity_threshold]) / self.periods_length_in_days * 100
+        return precentage_of_low_capacity_days
 
     def calculate_periodic_cost(self, simulation_period_output: HourlySimulationDataOfPeriod,
                                 prices: HourlyPricesData,
                                 start_date: datetime.datetime,
-                                end_date: datetime.datetime) -> float:
+                                end_date: datetime.datetime,
+                                solar_panel_baught: float,
+                                batteries_baught: float) -> (float, float, float, float):
         """
         calculates the cost of the system in a certain period.
         :param simulation_period_output: an object which contains the simulation output of the current period
@@ -100,20 +166,26 @@ class PostProcessor():
         :return:
         """
         buying_prices = prices.get_buying_price_by_range_of_date(start_date, end_date)
-        battery_capex_prices = prices.get_battery_capex_by_range_of_date(start_date, end_date)
-        panel_capex_prices = prices.get_solar_panel_capex_by_range_of_date(start_date, end_date)
         battery_opex_prices = prices.get_battery_opex_by_range_of_date(start_date, end_date)
         panel_opex_prices = prices.get_solar_panel_opex_by_range_of_date(start_date, end_date)
+        battery_capex = prices.get_battery_capex_by_range_of_date(start_date, start_date + datetime.timedelta(days=1))[
+            0]
+        panel_capex = \
+            prices.get_solar_panel_capex_by_range_of_date(start_date, start_date + datetime.timedelta(days=1))[0]
 
         cost_of_buying_electricity = np.dot(simulation_period_output.get_electricity_buying(), buying_prices)
 
-        cost_of_batteries = np.dot(simulation_period_output.get_new_batteries(), battery_capex_prices) + \
+        cost_of_batteries = batteries_baught * battery_capex + \
                             np.dot(simulation_period_output.get_all_batteries(), battery_opex_prices)
+        cost_of_batteries_capex = batteries_baught * battery_capex
+        cost_of_batteries_opex = np.dot(simulation_period_output.get_all_batteries(), battery_opex_prices)
 
-        cost_of_panels = np.dot(simulation_period_output.get_new_solar_panels(), panel_capex_prices) + \
+        cost_of_panels = solar_panel_baught * panel_capex + \
                          np.dot(simulation_period_output.get_all_solar_panels(), panel_opex_prices)
+        cost_of_panels_capex = batteries_baught * battery_capex
+        cost_of_panels_opex = np.dot(simulation_period_output.get_all_batteries(), battery_opex_prices)
 
-        return cost_of_buying_electricity + cost_of_batteries + cost_of_panels
+        return cost_of_buying_electricity, cost_of_batteries_capex, cost_of_batteries_opex, cost_of_panels_capex, cost_of_panels_opex
 
     def calculate_periodic_profit(self, simulation_period_output: HourlySimulationDataOfPeriod,
                                   prices: HourlyPricesData,
@@ -130,10 +202,25 @@ class PostProcessor():
         period_prices = prices.get_selling_electricity_price_by_range_of_date(start_date, end_date)
         return float(np.dot(simulation_period_output.get_electricity_sells(), period_prices))
 
+    def calculate_periodic_didnt_buy(self, simulation_period_output: HourlySimulationDataOfPeriod,
+                                     prices: HourlyPricesData,
+                                     start_date: datetime.datetime,
+                                     end_date: datetime.datetime) -> float:
+        """
+        calculates the profit for a given period.
+        :param simulation_period_output: an object which contains the simulation output of the current period
+        :param prices: an object which represents the price of the electricity each hour, in todo: add units
+        :param start_date: the start date of the period
+        :param end_date: the end date of the period
+        :return: the periodic profit
+        """
+        period_prices = prices.get_selling_electricity_price_by_range_of_date(start_date, end_date)
+        return float(np.dot(simulation_period_output.get_electricity_didnt_buy(), period_prices))
+
     def calculate_periodic_pollute(self, simulation_period_output: HourlySimulationDataOfPeriod,
                                    emission_rate: HourlyEmmision,
                                    start_date: datetime.datetime,
-                                   end_date: datetime.datetime) -> float:
+                                   end_date: datetime.datetime) -> Dict[str, float]:
         """
         calculates the profit for a given period.
         :param simulation_period_output: an object which contains the simulation output of the current period
@@ -142,8 +229,13 @@ class PostProcessor():
         :param end_date: the end date of the period
         :return: the periodic profit
         """
-        period_pollute = emission_rate.get_emission_rate_by_range_of_date(start_date, end_date)
-        return float(np.dot(simulation_period_output.get_electricity_buying(), period_pollute))
+        # TODO: move the constants to a config file
+        # the data is presented in units of grams.
+        periodic_electricity_buying = float(np.sum(simulation_period_output.get_electricity_buying()))
+        period_pollution = {"CO2": self.pollution_rates["CO2"] * periodic_electricity_buying,
+                            "SOx": self.pollution_rates["SOx"] * periodic_electricity_buying,
+                            "PMx": self.pollution_rates["PMx"] * periodic_electricity_buying}
+        return period_pollution
 
     def save_output(self, periodic_data: pd.DataFrame) -> None:
         """
@@ -294,9 +386,9 @@ def write_electricity_prices_csv_real_values():
             if date.day == 29 and date.month == 2:
                 electricity_prices.append(raw_electricity_price_in_2022[
                                               f'{2022}-{str(date.month).zfill(2)}-{str(date.day - 1).zfill(2)}T{str(hour).zfill(2)}:00:00'])
-            elif date.day==25 and date.month==3 and hour == 2:
+            elif date.day == 25 and date.month == 3 and hour == 2:
                 electricity_prices.append(raw_electricity_price_in_2022[
-                                              f'{2022}-{str(date.month).zfill(2)}-{str(date.day).zfill(2)}T{str(hour-1).zfill(2)}:00:00'])
+                                              f'{2022}-{str(date.month).zfill(2)}-{str(date.day).zfill(2)}T{str(hour - 1).zfill(2)}:00:00'])
 
             else:
                 electricity_prices.append(raw_electricity_price_in_2022[
@@ -348,5 +440,5 @@ if __name__ == '__main__':
     # unittest.main()
     # write_electricity_prices_csv()
     # write_pollution_rates_csv()
-    #write_pollution_rates_csv_test_values()
+    # write_pollution_rates_csv_test_values()
     pass
