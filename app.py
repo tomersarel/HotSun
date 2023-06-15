@@ -82,7 +82,7 @@ def func(set_progress, n, config):
     logging.info("Process - Start simulation")
     manager = Manager(demand_hourly, [period_strategy.PeriodStrategy(10000, 100) for i in range(33)], [],
                       solar_rad_hourly,
-                      hourly_strategy.Manager(period=[True,False,True,False,True]), config)
+                      hourly_strategy.EconomicGreedyStrategy(buy_rate=1,sell_rate=1,should_sell=False), config)
     output_energy = manager.run_simulator(set_progress)
     logging.info("Process - End simulation")
 

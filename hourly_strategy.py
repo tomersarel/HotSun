@@ -32,34 +32,34 @@ class EconomicGreedyStrategy(DailyStrategy):
             hourly_demand = demand[hour]
             solar_production = sum([panel.calc_energy_gen_hourly(solar_rad[hour])
                                     for panel in state.solar_panels])
-            if solar_production > hourly_demand:
+            to_charge = solar_production - hourly_demand
+            if solar_production >= hourly_demand:
                 solar[hour] = hourly_demand
 
-                to_charge = solar_production - hourly_demand
                 battery_index = 0
                 # if should_sell is true, sell the excess energy to the grid instead of storing it
                 if self.should_sell:
                     selling[hour] = to_charge
                 else:
                     while not math.isclose(to_charge, 0, abs_tol=10 ** -10) and battery_index < len(state.batteries):
-                        charged = state.batteries[battery_index].try_charge(to_charge)
+                        charged = state.batteries[battery_index].try_charge(to_charge*0.8)
                         storaged[hour] += charged
                         to_charge -= charged
                         battery_index += 1
+                        selling[hour] += charged
             else:
                 solar[hour] = solar_production
-                to_supply = hourly_demand - solar_production
+                to_supply = hourly_demand - solar_production - to_charge
                 battery_index = 0
                 # if should_sell is false, buy the energy from the grid instead of discharging it
-                if self.should_sell:
-                    buying[hour] = to_supply
-                else:
-                    while not math.isclose(to_supply, 0, abs_tol=10 ** -10) and battery_index < len(state.batteries):
-                        discharged = state.batteries[battery_index].try_discharge(to_supply)
-                        to_supply -= discharged
-                        batteries[hour] += discharged
-                        battery_index += 1
-            state.current_date += datetime.timedelta(hours=1)
+                while not math.isclose(to_supply, 0, abs_tol=10 ** -10) and battery_index < len(state.batteries):
+                    discharged = state.batteries[battery_index].try_discharge(to_supply)
+                    to_supply -= discharged
+                    buying[hour] += discharged
+                    batteries[hour] += discharged
+                    battery_index += 1
+            
+            state.current_date+= datetime.timedelta(hours=1)
 
         new_batteries_energy = state.batteries[-1].capacity
         new_panels_power = state.solar_panels[-1].amount * state.solar_panels[-1].max_power
@@ -94,7 +94,7 @@ class GreenEnergyUtilizationStrategy(DailyStrategy):
             solar_production = sum([panel.calc_energy_gen_hourly(solar_rad[hour])
                                     for panel in self.state.solar_panels])
             
-            if solar_production > hourly_demand:
+            if solar_production >= hourly_demand:
                 solar[hour] = hourly_demand
 
                 to_charge = solar_production - hourly_demand
@@ -104,18 +104,17 @@ class GreenEnergyUtilizationStrategy(DailyStrategy):
                     storaged[hour] += charged
                     to_charge -= charged
                     battery_index += 1
-                print("to_charge: ", to_charge)
-                selling[hour] = to_charge
+                    selling[hour] = to_charge
             else:
                 solar[hour] = solar_production
                 to_supply = hourly_demand - solar_production
                 battery_index = 0
-                while not math.isclose(to_supply, 0, abs_tol=10 ** -10) and battery_index < len(self.state.batteries):
-                    discharged = self.state.batteries[battery_index].try_discharge(to_supply)
+                while not math.isclose(to_supply, 0, abs_tol=10 ** -10) and battery_index < len(state.batteries):
+                    discharged = state.batteries[battery_index].try_discharge(to_supply)
                     to_supply -= discharged
                     batteries[hour] += discharged
                     battery_index += 1
-                buying[hour] = to_supply
+                    buying[hour] = to_supply
             self.state.current_date += datetime.timedelta(hours=1)
 
         new_batteries_energy = self.state.batteries[-1].capacity
@@ -145,7 +144,9 @@ class Manager(DailyStrategy):
         self.economic_greedy_algorithm = EconomicGreedyStrategy(sell_rate=self.sell_rate, buy_rate=self.buy_rate, should_sell=self.should_sell)
         self.green_energy_utilization_algorithm = GreenEnergyUtilizationStrategy(buy_rate=self.sell_rate, sell_rate=self.buy_rate)
         self.flag = False
-        self.state = None
+        self.state1 = None
+        self.state2 = None
+        self.result = pd.DataFrame()
 
     def getCurrentPeriodLength(self):
         if not self.period:
@@ -186,7 +187,6 @@ class Manager(DailyStrategy):
         if not state:
             raise ValueError("State parameter cannot be None")
         self.state = state
-        result = None
         try:
             for i in range(len(self.period)):
                 if i == self.get_stating_preparation_time():
@@ -194,21 +194,21 @@ class Manager(DailyStrategy):
                     self.flag = True
                 if self.flag == True:
                     if self.should_sell == True:
-                        result = self.economic_greedy_algorithm(state, demand, solar_rad)
+                        self.result = self.economic_greedy_algorithm(state, demand, solar_rad)
                     else:
-                        result,final_state = self.green_energy_utilization_algorithm(state, demand, solar_rad)
+                        self.result,final_state = self.green_energy_utilization_algorithm(state, demand, solar_rad)
                 else:
-                    result,final_state = self.economic_greedy_algorithm(state, demand, solar_rad)
-                if result['Buying'].sum() < result['Selling'].sum():
-                    result = self.economic_greedy_algorithm(state, demand, solar_rad)
+                    self.result,final_state = self.economic_greedy_algorithm(state, demand, solar_rad)
+                if self.result['Buying'].sum() < self.result['Selling'].sum():
+                    self.result = self.economic_greedy_algorithm(state, demand, solar_rad)
                 else:
-                    result,final_state = self.green_energy_utilization_algorithm(state, demand, solar_rad)
+                    self.result,final_state = self.green_energy_utilization_algorithm(state, demand, solar_rad)
                 state = final_state
         except Exception as e:
             return {"error": str(e)}, state
         # align dash.exceptions.LongCallbackError: An error occurred inside a long callback: shapes (864,) and (8760,) not aligned: 864 (dim 0) != 8760 (dim 0)
 
-        return result, self.state
+        return self.result, state
 
 class GreedyDailyStrategy(DailyStrategy):
     def __call__(self, state: state.State, demand: np.array, solar_rad: np.array):
