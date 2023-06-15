@@ -55,7 +55,7 @@ class EconomicGreedyStrategy(DailyStrategy):
                 while not math.isclose(to_supply, 0, abs_tol=10 ** -10) and battery_index < len(state.batteries):
                     discharged = state.batteries[battery_index].try_discharge(to_supply)
                     to_supply -= discharged
-                    buying[hour] += discharged
+                    buying[hour] +=discharged
                     batteries[hour] += discharged
                     battery_index += 1
             
