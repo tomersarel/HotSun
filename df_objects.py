@@ -222,7 +222,7 @@ class SolarProductionHourlyDataPVGIS(SolarRadiationHourly):
         # israel is at (GMT+3)
         self.df['time'] = self.df['time'] + pd.DateOffset(hours=3)
         missing_hours = pd.DataFrame({'time': pd.date_range('2016-01-01', periods=3, freq='H'), 'P': [0, 0, 0]})
-        self.df = missing_hours.append(self.df)
+        self.df = pd.concat([missing_hours, self.df])
 
     def get_solar_rad_daily_by_range_of_date(self, start_date: datetime.datetime, end_date: datetime.datetime):
         """
