@@ -148,7 +148,7 @@ def dict_to_dataframe(df):
     df = pd.DataFrame(df)
     if df.empty:
         return df
-    df['Date'] = pd.to_datetime(df['Date'], dayfirst=True)
+    df['Date'] = pd.to_datetime(df['Date'], format='%Y-%m-%dT%H:%M:%S', dayfirst=True)
     df = df.set_index('Date')
     for coloumn in df.columns:
         if coloumn in energy_columns:
