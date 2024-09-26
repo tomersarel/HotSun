@@ -395,7 +395,7 @@ def update_output(content, file_name, start, end, length):
             if len(df.columns) != 3 \
                     or not numpy.array_equal(df.columns.to_numpy(),
                                              numpy.array(['period', 'solar_panel_purchased', 'batteries_purchased'])) \
-                    or df.count()[0] != calculate_periods_amount(start, end, length) \
+                    or df.count()['period'] != calculate_periods_amount(start, end, length) \
                     or not all(str(x).isnumeric() for x in df['solar_panel_purchased']) \
                     or not all(str(x).isnumeric() for x in df['batteries_purchased']):
                 raise Exception("Bad file format")

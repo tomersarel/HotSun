@@ -20,7 +20,7 @@ application = Dash("Hot Sun", use_pages=True,
                    suppress_callback_exceptions=True, background_callback_manager=background_callback_manager,
                    )
 
-application._favicon = "/assets/logo.ico"
+# application._favicon = "/assets/logo.ico"
 
 navbar = dbc.NavbarSimple(
     children=[
@@ -100,7 +100,7 @@ def main(set_progress, n, config):
     """
     set_progress(("0", "1", "Gathering Data...", "100%"))
     # demand_hourly = DemandHourlyCityData(config['LOCATION']['name'])
-    demand_hourly = DemandHourlyCustomYearlyFile('highschool_consumption.csv', 1.028, config['END_YEAR'])
+    demand_hourly = DemandHourlyCustomYearlyFile('education_city_consumption.csv', 1.01, config['END_YEAR'])
 
     if config["solar"]["datasource"] == "PVGIS":
         solar_rad_hourly = SolarProductionHourlyDataPVGIS(config['LOCATION']['longitude'],

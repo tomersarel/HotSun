@@ -71,7 +71,7 @@ def generate_energy_graph_by_date_range(start, end, df, resample='H'):
             energy_columns]
 
 
-def generate_energy_graph_by_year_range(start_year, end_year, df, resample='Y'):
+def generate_energy_graph_by_year_range(start_year, end_year, df, resample='YE'):
     """
     generate energy graph by year range and resample it.
     :param start_year: the start year
@@ -103,7 +103,7 @@ def generate_yaerly_renewable_energy_precentage_graph(df_energy):
     :param df_energy: the energy df
     :return: the graph
     """
-    yearly = df_energy.resample("Y", convention="start").sum()
+    yearly = df_energy.resample("YE", convention="start").sum()
     yearly['percentages'] = (yearly['Solar'] + yearly['Batteries']) / (
             yearly['Solar'] + yearly['Batteries'] + yearly['Buying']) * 100
     yerly_figure = get_figure(

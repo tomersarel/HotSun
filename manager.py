@@ -53,7 +53,7 @@ class Manager:
         self.hourly_solar_radiation = hourly_solar_radiation
         self.daily_strategy = daily_strategy
         self.current_state = State(self.start_date)
-        self.current_state.solar_panels.append(solar_panel.SolarPanel(5, config))
+        self.current_state.solar_panels.append(solar_panel.SolarPanel(900, config))
         logging.info(f"Manager was built successfully.")
 
 
